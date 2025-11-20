@@ -33,7 +33,6 @@ class Entity(ABC):
     # Auto-generated / internal state (have defaults)
     id: int = field(default_factory=get_next_entity_id)
     alive: bool = True
-    last_action: Optional[Action] = None
 
     # Capability flags (have defaults, set by subclasses)
     can_move: bool = True
@@ -219,10 +218,6 @@ class Entity(ABC):
             "can_shoot": self.can_shoot,
         }
 
-        # Serialize last action if present
-        if self.last_action:
-            data["last_action"] = self.last_action.to_dict()
-
         return data
 
     @classmethod
@@ -250,9 +245,6 @@ class Entity(ABC):
         # Restore base entity state
         entity.id = data["id"]
         entity.alive = data["alive"]
-
-        if "last_action" in data:
-            entity.last_action = Action.from_dict(data["last_action"])
 
         return entity
 

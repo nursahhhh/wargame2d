@@ -322,9 +322,6 @@ class CombatResolver:
         # Consume missile
         attacker.missiles -= 1
         
-        # Update last action
-        attacker.last_action = action
-        
         # Handle SAM cooldown
         from ..entities.sam import SAM
         if isinstance(attacker, SAM):
@@ -441,4 +438,3 @@ class CombatResolver:
         world.clear_pending_kills()
         
         return logs, killed_ids
-

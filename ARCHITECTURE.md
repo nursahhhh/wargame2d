@@ -491,6 +491,67 @@ Beyond max_range:      probability = min_p (clamped)
 Linear interpolation in between
 ```
 
+**Combat Resolution Features:**
+- Target validation
+- Range checking
+- Hit probability calculation
+- Ammunition management
+- SAM cooldown management
+- Kill tracking (marks entities for death)
+- Death application (applies pending kills to entities)
+- Randomized execution order
+
+**Example Usage:**
+```python
+from env.mechanics import CombatResolver
+
+combat = CombatResolver()
+
+# Resolve all combat actions
+combat_results = combat.resolve_all(world, actions, randomize_order=True)
+
+# Check results
+for result in combat_results:
+    if result.success:
+        print(f"{result.log}")
+        print(f"  Distance: {result.distance:.2f}")
+        print(f"  Hit prob: {result.hit_probability:.2%}")
+        print(f"  Result: {'HIT' if result.hit else 'MISS'}")
+        if result.target_killed:
+            print(f"  TARGET DESTROYED!")
+    else:
+        print(f"Shot blocked: {result.log}")
+
+# Check if any combat occurred (for stalemate)
+if combat.has_combat_occurred(combat_results):
+    print("Combat happened this turn")
+
+# Get statistics
+stats = combat.get_combat_summary(combat_results)
+print(f"Fired: {stats['fired']}, Hits: {stats['hits']}, Kills: {stats['kills']}")
+
+# Apply pending deaths (marked during combat)
+death_logs, killed_ids = combat.apply_pending_deaths(world)
+print(f"Entities destroyed: {killed_ids}")
+
+# Utility - check remaining ammunition
+total_missiles = combat.get_total_missiles_remaining(world)
+```
+
+**CombatResult Structure:**
+```python
+@dataclass
+class CombatResult:
+    attacker_id: int
+    target_id: int | None
+    success: bool  # Was shot fired?
+    hit: bool | None  # Did it hit?
+    distance: float | None
+    hit_probability: float | None
+    target_killed: bool
+    log: str
+```
+
 #### `sensors.py` - Observation System
 **What:** Computes what entities observe based on radar
 **Why:** Implements fog of war and intelligence gathering
@@ -583,67 +644,6 @@ class MovementResult:
     old_pos: tuple[int, int]
     new_pos: tuple[int, int]
     log: str  # Human-readable message
-```
-
-**Combat Resolution Features:**
-- Target validation
-- Range checking
-- Hit probability calculation
-- Ammunition management
-- SAM cooldown management
-- Kill tracking (marks entities for death)
-- Death application (applies pending kills to entities)
-- Randomized execution order
-
-**Example Usage:**
-```python
-from env.mechanics import CombatResolver
-
-combat = CombatResolver()
-
-# Resolve all combat actions
-combat_results = combat.resolve_all(world, actions, randomize_order=True)
-
-# Check results
-for result in combat_results:
-    if result.success:
-        print(f"{result.log}")
-        print(f"  Distance: {result.distance:.2f}")
-        print(f"  Hit prob: {result.hit_probability:.2%}")
-        print(f"  Result: {'HIT' if result.hit else 'MISS'}")
-        if result.target_killed:
-            print(f"  TARGET DESTROYED!")
-    else:
-        print(f"Shot blocked: {result.log}")
-
-# Check if any combat occurred (for stalemate)
-if combat.has_combat_occurred(combat_results):
-    print("Combat happened this turn")
-
-# Get statistics
-stats = combat.get_combat_summary(combat_results)
-print(f"Fired: {stats['fired']}, Hits: {stats['hits']}, Kills: {stats['kills']}")
-
-# Apply pending deaths (marked during combat)
-death_logs, killed_ids = combat.apply_pending_deaths(world)
-print(f"Entities destroyed: {killed_ids}")
-
-# Utility - check remaining ammunition
-total_missiles = combat.get_total_missiles_remaining(world)
-```
-
-**CombatResult Structure:**
-```python
-@dataclass
-class CombatResult:
-    attacker_id: int
-    target_id: int | None
-    success: bool  # Was shot fired?
-    hit: bool | None  # Did it hit?
-    distance: float | None
-    hit_probability: float | None
-    target_killed: bool
-    log: str
 ```
 
 #### `victory.py` - Victory Conditions
@@ -969,36 +969,25 @@ The environment executes this sequence each turn:
 1. Pre-step Housekeeping
    - Tick SAM cooldowns
 
-2. Sensing (Pre-movement)
+2. Movement Phase
+   - MovementResolver.resolve_actions()
+   - Handles movement, toggles, waits
+   - Counter updates handled internally
+
+3. Sensing (Post-movement)
    - SensorSystem.refresh_all_observations()
    - Update team views
 
-3. Movement Phase
-   - MovementResolver.resolve_all()
-   - MovementResolver.resolve_toggles()
-   - MovementResolver.resolve_waits()
+4. Combat Phase
+   - CombatResolver.resolve_combat()
+   - Includes death application
+   - Counter updates handled internally
 
-4. Re-sensing (Post-movement)
-   - SensorSystem.refresh_all_observations()
-   - Update team views
-
-5. Combat Phase
-   - CombatResolver.resolve_all()
-
-6. Death Resolution
-   - CombatResolver.apply_pending_deaths()
-
-7. Victory Check
+5. Victory Check
    - VictoryConditions.check_all()
 
-8. Counter Updates
-   - Track stalemate/stagnation
-
-9. Logging
-   - Store per-team observable logs
-
-10. Return Results
-    - (observations, rewards, done, info)
+6. Return Results
+   - (state, rewards, done, info)
 ```
 
 ---
@@ -1142,14 +1131,14 @@ environment.py  ← Orchestrates everything (uses world, mechanics, scenario)
 
 | Module | Lines | Files | Status | Dependencies |
 |--------|-------|-------|--------|--------------|
-| `core/` | ~400 | 3 | ✅ | None |
-| `entities/` | ~500 | 5 | ✅ | core |
-| `world/` | ~500 | 3 | ✅ | core, entities |
-| `mechanics/` | ~1,100 | 4 | ✅ | core, entities, world |
-| `utils/` | ~60 | 1 | ✅ | None |
-| `config.py` | ~100 | 1 | ✅ | core |
-| `environment.py` | ~550 | 1 | ✅ | All above |
-| **Total** | **~3,200** | **18** | ✅ | Clean hierarchy |
+| `core/` | ~618 | 3 | ✅ | None |
+| `entities/` | ~807 | 5 | ✅ | core |
+| `world/` | ~758 | 3 | ✅ | core, entities |
+| `mechanics/` | ~1,493 | 4 | ✅ | core, entities, world |
+| `utils/` | ~75 | 1 | ✅ | None |
+| `scenario.py` | ~336 | 1 | ✅ | core, entities |
+| `environment.py` | ~347 | 1 | ✅ | All above |
+| **Total** | **~4,493** | **24** | ✅ | Clean hierarchy |
 
 ---
 

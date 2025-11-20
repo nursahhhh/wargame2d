@@ -218,7 +218,6 @@ class MovementResolver:
         
         # Movement is valid - apply it
         entity.pos = new_pos
-        entity.last_action = action
         
         return MovementResult(
             entity_id=entity.id,
@@ -287,7 +286,6 @@ class MovementResolver:
         
         # Apply toggle
         entity.on = desired_state
-        entity.last_action = action
         
         state_str = "ON" if desired_state else "OFF"
         return f"{entity.label()} radar toggled {state_str}"
@@ -316,8 +314,6 @@ class MovementResolver:
             action = actions.get(entity.id)
             if not action or action.type != ActionType.WAIT:
                 continue
-            
-            entity.last_action = action
             logs.append(f"{entity.label()} waits")
         
         return logs
@@ -352,4 +348,3 @@ class MovementResolver:
             "blocked": sum(1 for r in results if not r.success and "blocked" in r.log),
             "out_of_bounds": sum(1 for r in results if not r.success and "boundary" in r.log),
         }
-
