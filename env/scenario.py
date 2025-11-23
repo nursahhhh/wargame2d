@@ -141,6 +141,15 @@ class Scenario:
             raise ValueError(f"Entity must be Team.RED, got {entity.team}")
         self.red_entities.append(entity)
         return self
+
+    def clone(self) -> Scenario:
+        """
+        Create a deep copy of this scenario (including entities).
+        
+        Useful for running multiple environments from the same base scenario
+        without sharing mutable entity objects.
+        """
+        return Scenario.from_json_dict(self.to_json_dict())
     
     def to_dict(self) -> Dict[str, Any]:
         """

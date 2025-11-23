@@ -11,7 +11,7 @@ This module provides pure logic for determining game outcomes:
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple, Dict, Any
 
 from ..core.types import Team, GameResult, EntityKind
 
@@ -44,6 +44,25 @@ class VictoryResult:
         if self.result == GameResult.IN_PROGRESS:
             return "Game in progress"
         return f"{self.result}: {self.reason}"
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize victory result to a plain dict."""
+        return {
+            "result": self.result.name,
+            "reason": self.reason,
+            "winner": self.winner.name if self.winner else None,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "VictoryResult":
+        """Deserialize a victory result from a dict."""
+        winner_name = data.get("winner")
+        winner = Team[winner_name] if winner_name else None
+        return cls(
+            result=GameResult[data["result"]],
+            reason=data.get("reason", ""),
+            winner=winner,
+        )
 
 
 class VictoryConditions:

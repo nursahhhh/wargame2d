@@ -909,14 +909,16 @@ env.world -> WorldState  # Current world state
 ```
 
 #### `StepInfo` - Turn Information
-**What:** Minimal metadata returned after each step
-**Why:** Currently a placeholder for future debugging/metadata
+**What:** Metadata returned after each step
+**Why:** Provides raw resolver outputs for logging/analytics
 
 **Structure:**
 ```python
 @dataclass
 class StepInfo:
-    pass  # Currently empty, minimal metadata
+    movement: ActionResolutionResult  # MovementResolver output
+    combat: CombatResolutionResult    # CombatResolver output
+    victory: VictoryResult            # Result of victory check
 ```
 
 **Accessing Game State:**

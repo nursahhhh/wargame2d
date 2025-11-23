@@ -44,24 +44,29 @@ from .core.observations import Observation
 from .entities.base import Entity
 from .entities.sam import SAM
 from .world import WorldState
+from .scenario import Scenario
 from .mechanics import (
     SensorSystem, 
     MovementResolver, 
     CombatResolver, 
     VictoryConditions, 
-    VictoryResult
+    VictoryResult,
+    ActionResolutionResult,
+    CombatResolutionResult,
 )
 
 
 @dataclass
 class StepInfo:
     """
-    Minimal metadata returned at the end of each step.
+    Per-step metadata returned at the end of each step.
     
-    Contains basic debugging/metadata information. All game state
-    is in the returned state dict.
+    Contains the raw movement and combat resolution outputs plus the
+    victory check result. The full world is still returned in `state`.
     """
-    pass  # Currently empty, can add debug metadata if needed
+    movement: ActionResolutionResult
+    combat: CombatResolutionResult
+    victory: VictoryResult
 
 
 class GridCombatEnv:
@@ -114,7 +119,7 @@ class GridCombatEnv:
     # For continuation games, we might reset the env with scenario and world and fix the initialization logic accordingly.
     def reset(
         self, 
-        scenario: Dict[str, Any]
+        scenario: Scenario | Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Reset the environment with a scenario.
@@ -145,11 +150,18 @@ class GridCombatEnv:
         Raises:
             ValueError: If scenario is missing required config
         """
+        # Normalize scenario input (supports Scenario or raw dict)
+        if isinstance(scenario, Scenario):
+            # Clone to avoid sharing mutable entities with caller
+            scenario_data = scenario.clone().to_dict()
+        else:
+            scenario_data = scenario
+
         # Extract config from scenario
-        if "config" not in scenario:
+        if "config" not in scenario_data:
             raise ValueError("Scenario must contain 'config' dictionary")
         
-        scenario_config = scenario["config"]
+        scenario_config = scenario_data["config"]
         
         # Extract grid settings
         grid_width = scenario_config["grid_width"]
@@ -183,9 +195,9 @@ class GridCombatEnv:
         self.world.turns_without_movement = 0
         
         # Add entities from scenario
-        for entity in scenario.get("blue_entities", []):
+        for entity in scenario_data.get("blue_entities", []):
             self.world.add_entity(entity)
-        for entity in scenario.get("red_entities", []):
+        for entity in scenario_data.get("red_entities", []):
             self.world.add_entity(entity)
         
         # Refresh observations after adding entities
@@ -221,7 +233,7 @@ class GridCombatEnv:
             - state: Dict - complete state (shared by both teams)
             - rewards: Dict[Team, float] - reward signal for each team
             - done: bool - whether game is over
-            - info: StepInfo - minimal metadata
+            - info: StepInfo - movement/combat/victory metadata
         
         Raises:
             RuntimeError: If reset() hasn't been called
@@ -257,7 +269,11 @@ class GridCombatEnv:
         # Build return values
         state = self._build_state()
         rewards = self._calculate_rewards(victory_result)
-        info = StepInfo()
+        info = StepInfo(
+            movement=action_results,
+            combat=combat_results,
+            victory=victory_result
+        )
         
         return state, rewards, victory_result.is_game_over, info
     
