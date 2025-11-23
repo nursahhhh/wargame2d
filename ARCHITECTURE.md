@@ -508,30 +508,26 @@ from env.mechanics import CombatResolver
 combat = CombatResolver()
 
 # Resolve all combat actions
-combat_results = combat.resolve_all(world, actions, randomize_order=True)
+combat_result = combat.resolve_combat(world, actions, randomize_order=True)
 
 # Check results
-for result in combat_results:
+for result in combat_result.combat_results:
     if result.success:
-        print(f"{result.log}")
+        print(result.log)
         print(f"  Distance: {result.distance:.2f}")
         print(f"  Hit prob: {result.hit_probability:.2%}")
         print(f"  Result: {'HIT' if result.hit else 'MISS'}")
         if result.target_killed:
-            print(f"  TARGET DESTROYED!")
+            print("  TARGET DESTROYED!")
     else:
         print(f"Shot blocked: {result.log}")
 
 # Check if any combat occurred (for stalemate)
-if combat.has_combat_occurred(combat_results):
+if combat_result.combat_occurred:
     print("Combat happened this turn")
 
-# Get statistics
-stats = combat.get_combat_summary(combat_results)
-print(f"Fired: {stats['fired']}, Hits: {stats['hits']}, Kills: {stats['kills']}")
-
 # Apply pending deaths (marked during combat)
-death_logs, killed_ids = combat.apply_pending_deaths(world)
+death_logs, killed_ids = combat_result.death_logs, combat_result.killed_entity_ids
 print(f"Entities destroyed: {killed_ids}")
 
 # Utility - check remaining ammunition
@@ -612,27 +608,22 @@ from env.mechanics import MovementResolver
 movement = MovementResolver()
 
 # Resolve all movement actions
-move_results = movement.resolve_all(world, actions, randomize_order=True)
+result = movement.resolve_actions(world, actions, randomize_order=True)
 
 # Check results
-for result in move_results:
-    if result.success:
-        print(f"{result.log}")
-        print(f"  Moved from {result.old_pos} to {result.new_pos}")
+for move in result.movement_results:
+    if move.success:
+        print(f"Moved from {move.old_pos} to {move.new_pos}")
     else:
-        print(f"Failed: {result.log}")
+        print(f"Failed movement for {move.entity_id}: {move.failure_reason}")
 
 # Check if any movement occurred (for stagnation)
-if movement.has_movement_occurred(move_results):
+if result.movement_occurred:
     print("Someone moved this turn")
 
-# Handle toggles and waits separately
-toggle_logs = movement.resolve_toggles(world, actions)
-wait_logs = movement.resolve_waits(world, actions)
-
-# Get statistics
-stats = movement.get_movement_summary(move_results)
-print(f"Attempted: {stats['attempted']}, Success: {stats['successful']}")
+# Combined logs (toggle/wait/invalid/movement) in execution order
+for log in result.logs:
+    print(log)
 ```
 
 **MovementResult Structure:**
@@ -643,7 +634,7 @@ class MovementResult:
     success: bool
     old_pos: tuple[int, int]
     new_pos: tuple[int, int]
-    log: str  # Human-readable message
+    failure_reason: str | None  # Optional failure code
 ```
 
 #### `victory.py` - Victory Conditions

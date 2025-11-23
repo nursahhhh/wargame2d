@@ -36,6 +36,7 @@ htmlcov/
 # Environment / secrets
 .env
 .env.*
+storage/
 
 # OS-specific junk
 .DS_Store

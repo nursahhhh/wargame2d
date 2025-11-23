@@ -110,7 +110,8 @@ class GridCombatEnv:
         
         # Victory checker (will be initialized in reset())
         self._victory_checker: Optional[VictoryConditions] = None
-    
+
+    # For continuation games, we might reset the env with scenario and world and fix the initialization logic accordingly.
     def reset(
         self, 
         scenario: Dict[str, Any]
@@ -229,20 +230,21 @@ class GridCombatEnv:
             raise RuntimeError("Must call reset() before calling step()")
         
         self.world.turn += 1
-        
+
         self._housekeeping() # Tick SAM cooldowns for now.
-        #self._sensors.refresh_all_observations(self.world) # sense before movement
-        
+
         # Resolve all (movement, toggles, waits) actions for a turn.
         # (Counter updates are handled inside resolve_actions)
         action_results = self._movement.resolve_actions(self.world, actions)
-        
-        # Sense after movement
-        self._sensors.refresh_all_observations(self.world)
-        
+
         # Resolve all combat actions (including death application) for a turn.
         # (Counter updates are handled inside resolve_combat)
-        combat_resolution = self._combat.resolve_combat(self.world, actions)
+        combat_results = self._combat.resolve_combat(self.world, actions)
+
+        # Resolvers already updates the grid world in-place. Observations are for the fog of war.
+        # So we are just updating, which team will see which entities after movement and combat.
+        # Sense after resolutions
+        self._sensors.refresh_all_observations(self.world)
         
         # Check victory
         victory_result = self._victory_checker.check_all(self.world)
@@ -271,7 +273,7 @@ class GridCombatEnv:
         """
         return {
             "world": self.world,
-            "config": {
+            "config": { # todo: maybe make those part of world.config?
                 "max_stalemate_turns": self._max_stalemate_turns,
                 "max_no_move_turns": self._max_no_move_turns,
                 "max_turns": self._max_turns,
@@ -311,27 +313,8 @@ class GridCombatEnv:
     def render(self, mode: str = "human") -> Optional[str]:
         """
         Render the environment.
-        
-        Currently a stub - will be implemented with ASCIIRenderer.
-        
-        Args:
-            mode: Render mode ('human', 'ansi', 'blue', 'red', 'god')
-        
-        Returns:
-            String representation if mode='ansi', None otherwise
         """
-        if self.world is None:
-            print("Environment not initialized. Call reset() first.")
-            return None
-        
-        # TODO: Implement with ASCIIRenderer
-        print(f"[Render stub - {mode} mode]")
-        print(f"Turn: {self.world.turn}")
-        print(f"Entities alive: Blue={len(self.world.get_team_entities(Team.BLUE))}, "
-              f"Red={len(self.world.get_team_entities(Team.RED))}")
-        print(f"Game over: {self.world.game_over}")
-        
-        return None
+        ...
     
     def close(self) -> None:
         """

@@ -267,9 +267,10 @@ def create_mixed_scenario() -> Scenario:
     """
     return Scenario(
         grid_width=20,
-        grid_height=20,
+        grid_height=13,
         max_stalemate_turns=60,
         max_no_move_turns=100,
+        max_turns=50,
         seed=42,
         # Blue team - Combined arms
         blue_entities=[
@@ -328,7 +329,7 @@ def create_mixed_scenario() -> Scenario:
             ),
             Decoy(team=Team.RED, pos=(16, 10)),
             SAM(
-                team=Team.RED, pos=(18, 18),
+                team=Team.RED, pos=(18, 12),
                 radar_range=8.0,
                 missiles=6,
                 missile_max_range=6.0,

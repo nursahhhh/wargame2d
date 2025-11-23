@@ -9,10 +9,10 @@ This module handles:
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple
 from dataclasses import dataclass
 
-from ..core.types import ActionType, MoveDir
+from ..core.types import ActionType
 from ..core.actions import Action
 from ..core.validation import validate_action_in_world
 
@@ -31,13 +31,34 @@ class MovementResult:
         success: Whether movement succeeded
         old_pos: Position before movement
         new_pos: Position after movement (same as old if failed)
-        log: Human-readable log message
+        failure_reason: Optional machine-readable reason code when movement fails
     """
     entity_id: int
     success: bool
     old_pos: tuple[int, int]
     new_pos: tuple[int, int]
-    log: str
+    failure_reason: str | None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize movement result to a plain dict."""
+        return {
+            "entity_id": self.entity_id,
+            "success": self.success,
+            "old_pos": self.old_pos,
+            "new_pos": self.new_pos,
+            "failure_reason": self.failure_reason,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "MovementResult":
+        """Deserialize a movement result from a dict."""
+        return cls(
+            entity_id=data["entity_id"],
+            success=data["success"],
+            old_pos=tuple(data["old_pos"]),
+            new_pos=tuple(data["new_pos"]),
+            failure_reason=data.get("failure_reason"),
+        )
 
 
 @dataclass
@@ -47,14 +68,32 @@ class ActionResolutionResult:
     
     Attributes:
         movement_results: Results from all movement actions
-        toggle_logs: Logs from all toggle actions
-        wait_logs: Logs from all wait actions
+        logs: Combined logs in execution order (including skipped/invalid)
         movement_occurred: True if at least one entity successfully moved
     """
     movement_results: List[MovementResult]
-    toggle_logs: List[str]
-    wait_logs: List[str]
+    logs: List[str]
     movement_occurred: bool
+
+    # Maybe add here a serialization/de-serialization logic.
+    # Also I might want to see all logs in a single list.
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize the action resolution result to a dict."""
+        return {
+            "movement_results": [r.to_dict() for r in self.movement_results],
+            "logs": self.logs,
+            "movement_occurred": self.movement_occurred,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ActionResolutionResult":
+        """Deserialize an action resolution result from a dict."""
+        return cls(
+            movement_results=[MovementResult.from_dict(r) for r in data.get("movement_results", [])],
+            logs=data.get("logs", []),
+            movement_occurred=data.get("movement_occurred", False),
+        )
 
 
 class MovementResolver:
@@ -78,7 +117,7 @@ class MovementResolver:
     def resolve_actions(
         self,
         world: WorldState,
-        actions: Dict[int, Action],
+        actions: Mapping[int, Action],
         randomize_order: bool = True
     ) -> ActionResolutionResult:
         """
@@ -89,84 +128,70 @@ class MovementResolver:
         
         Args:
             world: Current world state (modified in-place)
-            actions: Map of entity_id -> action
+            actions: Map of entity_id -> Action. Non-Action values are ignored with a log.
             randomize_order: If True, shuffle movement order to prevent ID bias
         
         Returns:
             ActionResolutionResult with all outcomes
         """
-        # Resolve movement
-        movement_results = self.resolve_all(world, actions, randomize_order)
-        
-        # Resolve toggles
-        toggle_logs = self.resolve_toggles(world, actions)
-        
-        # Resolve waits
-        wait_logs = self.resolve_waits(world, actions)
-        
-        # Check if any movement occurred
-        movement_occurred = self.has_movement_occurred(movement_results)
-        
+        alive_entities = {entity.id: entity for entity in world.get_alive_entities()}
+
+        movement_queue: List[tuple[Entity, Action]] = []
+        movement_results: List[MovementResult] = []
+        logs: List[str] = []
+
+        for entity_id, action in actions.items():
+            if not isinstance(action, Action):
+                logs.append(f"Invalid action for entity {entity_id}; ignoring")
+                continue
+
+            entity = alive_entities.get(entity_id)
+            if entity is None:
+                logs.append(f"Action provided for unknown or dead entity {entity_id}; ignoring")
+                continue
+
+            if action.type == ActionType.MOVE:
+                movement_queue.append((entity, action))
+            elif action.type == ActionType.TOGGLE:
+                logs.append(self._resolve_toggle(entity, action))
+            elif action.type == ActionType.WAIT:
+                logs.append(f"{entity.label()} waits")
+            else:
+                # SHOOT and other action types are handled elsewhere
+                logs.append(
+                    f"{entity.label()} action {action.type.name} ignored in movement phase"
+                )
+
+        # Randomize movement order to prevent ID bias
+        if randomize_order:
+            world.rng.shuffle(movement_queue)
+
+        # Process each movement
+        for entity, action in movement_queue:
+            result, log_message = self.resolve_single(world, entity, action)
+            movement_results.append(result)
+            logs.append(log_message)
+
+        movement_occurred = any(result.success for result in movement_results)
+
         # Update movement counter
         if movement_occurred:
             world.turns_without_movement = 0
         else:
             world.turns_without_movement += 1
-        
+
         return ActionResolutionResult(
             movement_results=movement_results,
-            toggle_logs=toggle_logs,
-            wait_logs=wait_logs,
+            logs=logs,
             movement_occurred=movement_occurred
         )
-    
-    def resolve_all(
-        self, 
-        world: WorldState, 
-        actions: Dict[int, Action],
-        randomize_order: bool = True
-    ) -> List[MovementResult]:
-        """
-        Resolve all movement actions for a turn.
-        
-        Movement actions are processed in random order to prevent
-        bias from entity ID ordering.
-        
-        Args:
-            world: Current world state (modified in-place)
-            actions: Map of entity_id -> action
-            randomize_order: If True, shuffle order to prevent ID bias
-        
-        Returns:
-            List of MovementResult objects (one per movement action)
-        """
-        results = []
-        
-        # Get all entities that want to move
-        moving_entities = []
-        for entity in world.get_alive_entities():
-            action = actions.get(entity.id)
-            if action and action.type == ActionType.MOVE:
-                moving_entities.append(entity)
-        
-        # Randomize order to prevent ID bias
-        if randomize_order:
-            world.rng.shuffle(moving_entities)
-        
-        # Process each movement
-        for entity in moving_entities:
-            action = actions[entity.id]
-            result = self.resolve_single(world, entity, action)
-            results.append(result)
-        
-        return results
     
     def resolve_single(
         self, 
         world: WorldState, 
         entity: Entity, 
         action: Action
-    ) -> MovementResult:
+    ) -> Tuple[MovementResult, str]:
         """
         Resolve a single movement action.
         
@@ -179,20 +204,21 @@ class MovementResolver:
             action: Movement action
         
         Returns:
-            MovementResult with outcome
+            Tuple of (MovementResult, log message)
         """
         old_pos = entity.pos
         
         # Use shared validation first (checks alive, can_move, direction, bounds)
         validation = validate_action_in_world(world, entity, action)
         if not validation.valid:
-            return MovementResult(
+            result = MovementResult(
                 entity_id=entity.id,
                 success=False,
                 old_pos=old_pos,
                 new_pos=old_pos,
-                log=validation.message
+                failure_reason=validation.error_code
             )
+            return result, validation.message
         
         # Extract direction (we know it's valid from validation)
         direction = action.params.get("dir")
@@ -205,55 +231,28 @@ class MovementResolver:
         
         # Check collision - TRULY DYNAMIC (position might have just been occupied)
         if world.is_position_occupied(new_pos):
-            return MovementResult(
+            log_message = f"{entity.label()} blocked by another entity at {new_pos}"
+            result = MovementResult(
                 entity_id=entity.id,
                 success=False,
                 old_pos=old_pos,
                 new_pos=old_pos,
-                log=f"{entity.label()} blocked by another entity at {new_pos}"
+                failure_reason="COLLISION"
             )
+            return result, log_message
         
         # Movement is valid - apply it
         entity.pos = new_pos
         
-        return MovementResult(
+        result = MovementResult(
             entity_id=entity.id,
             success=True,
             old_pos=old_pos,
             new_pos=new_pos,
-            log=f"{entity.label()} moves {direction.name} to {new_pos}"
+            failure_reason=None
         )
-    
-    def resolve_toggles(
-        self,
-        world: WorldState,
-        actions: Dict[int, Action]
-    ) -> List[str]:
-        """
-        Resolve TOGGLE actions (SAM radar on/off).
-        
-        Toggles are processed separately from movement since they
-        don't affect positioning.
-        
-        Args:
-            world: Current world state (modified in-place)
-            actions: Map of entity_id -> action
-        
-        Returns:
-            List of log messages
-        """
-        logs = []
-        
-        for entity in world.get_alive_entities():
-            action = actions.get(entity.id)
-            if not action or action.type != ActionType.TOGGLE:
-                continue
-            
-            # Handle toggle action
-            log = self._resolve_toggle(entity, action)
-            logs.append(log)
-        
-        return logs
+        log_message = f"{entity.label()} moves {direction.name} to {new_pos}"
+        return result, log_message
     
     def _resolve_toggle(self, entity: Entity, action: Action) -> str:
         """
@@ -269,7 +268,6 @@ class MovementResolver:
             Log message
         """
         from ..entities.sam import SAM
-        from ..world.world import WorldState
         
         # Use entity-level validation (checks if SAM, valid parameter)
         # Note: We need a world reference, but toggle doesn't use it
@@ -287,61 +285,3 @@ class MovementResolver:
         state_str = "ON" if desired_state else "OFF"
         return f"{entity.label()} radar toggled {state_str}"
     
-    def resolve_waits(
-        self,
-        world: WorldState,
-        actions: Dict[int, Action]
-    ) -> List[str]:
-        """
-        Resolve WAIT actions.
-        
-        Wait actions don't do anything, but we track them for logging
-        and action history.
-        
-        Args:
-            world: Current world state (modified in-place)
-            actions: Map of entity_id -> action
-        
-        Returns:
-            List of log messages
-        """
-        logs = []
-        
-        for entity in world.get_alive_entities():
-            action = actions.get(entity.id)
-            if not action or action.type != ActionType.WAIT:
-                continue
-            logs.append(f"{entity.label()} waits")
-        
-        return logs
-    
-    def has_movement_occurred(self, results: List[MovementResult]) -> bool:
-        """
-        Check if any movement actually happened this turn.
-        
-        Used for stagnation detection.
-        
-        Args:
-            results: Movement results from resolve_all()
-        
-        Returns:
-            True if at least one entity successfully moved
-        """
-        return any(result.success for result in results)
-    
-    def get_movement_summary(self, results: List[MovementResult]) -> Dict[str, int]:
-        """
-        Get summary statistics about movement.
-        
-        Args:
-            results: Movement results from resolve_all()
-        
-        Returns:
-            Dictionary with statistics
-        """
-        return {
-            "attempted": len(results),
-            "successful": sum(1 for r in results if r.success),
-            "blocked": sum(1 for r in results if not r.success and "blocked" in r.log),
-            "out_of_bounds": sum(1 for r in results if not r.success and "boundary" in r.log),
-        }

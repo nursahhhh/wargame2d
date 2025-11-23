@@ -25,6 +25,11 @@ class Observation:
     another. The information may be incomplete or deceptive (e.g., decoys
     appear as aircraft to enemies).
 
+    Observations are just the fog-of-war layer: who/what you can currently see and where.
+    They don’t drive mechanics; they’re there so UIs/agents can respect visibility limits.
+
+    The observation list itself is built from living entities (controlled by the sensor system)
+
     Attributes:
         entity_id: ID of the observed entity
         kind: Type of entity (may be deceptive for decoys observed by enemies)

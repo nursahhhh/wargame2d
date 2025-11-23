@@ -11,7 +11,7 @@ This module handles:
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
 from dataclasses import dataclass
 import random
 
@@ -106,6 +106,33 @@ class CombatResult:
     target_killed: bool
     log: str
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize combat result to a plain dict."""
+        return {
+            "attacker_id": self.attacker_id,
+            "target_id": self.target_id,
+            "success": self.success,
+            "hit": self.hit,
+            "distance": self.distance,
+            "hit_probability": self.hit_probability,
+            "target_killed": self.target_killed,
+            "log": self.log,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "CombatResult":
+        """Deserialize a combat result from a dict."""
+        return cls(
+            attacker_id=data["attacker_id"],
+            target_id=data.get("target_id"),
+            success=data["success"],
+            hit=data.get("hit"),
+            distance=data.get("distance"),
+            hit_probability=data.get("hit_probability"),
+            target_killed=data.get("target_killed", False),
+            log=data.get("log", ""),
+        )
+
 
 @dataclass
 class CombatResolutionResult:
@@ -122,6 +149,25 @@ class CombatResolutionResult:
     death_logs: List[str]
     killed_entity_ids: List[int]
     combat_occurred: bool
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize combat resolution result to a dict."""
+        return {
+            "combat_results": [r.to_dict() for r in self.combat_results],
+            "death_logs": self.death_logs,
+            "killed_entity_ids": self.killed_entity_ids,
+            "combat_occurred": self.combat_occurred,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "CombatResolutionResult":
+        """Deserialize a combat resolution result from a dict."""
+        return cls(
+            combat_results=[CombatResult.from_dict(r) for r in data.get("combat_results", [])],
+            death_logs=data.get("death_logs", []),
+            killed_entity_ids=data.get("killed_entity_ids", []),
+            combat_occurred=data.get("combat_occurred", False),
+        )
 
 
 class CombatResolver:
@@ -350,44 +396,6 @@ class CombatResolver:
         """
         return any(result.success for result in results)
     
-    def get_combat_summary(self, results: List[CombatResult]) -> Dict[str, int]:
-        """
-        Get summary statistics about combat.
-        
-        Args:
-            results: Combat results from resolve_all()
-        
-        Returns:
-            Dictionary with statistics
-        """
-        fired_results = [r for r in results if r.success]
-        
-        return {
-            "attempted": len(results),
-            "fired": len(fired_results),
-            "hits": sum(1 for r in fired_results if r.hit),
-            "misses": sum(1 for r in fired_results if not r.hit),
-            "kills": sum(1 for r in fired_results if r.target_killed),
-            "blocked": len(results) - len(fired_results),
-        }
-    
-    def get_total_missiles_remaining(self, world: WorldState) -> int:
-        """
-        Count total missiles remaining across all entities.
-        
-        Utility for victory condition checking.
-        
-        Args:
-            world: Current world state
-        
-        Returns:
-            Total number of missiles
-        """
-        total = 0
-        for entity in world.get_alive_entities():
-            if hasattr(entity, 'missiles'):
-                total += entity.missiles
-        return total
 
     def apply_pending_deaths(self, world: WorldState) -> tuple[List[str], List[int]]:
         """
