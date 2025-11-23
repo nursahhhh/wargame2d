@@ -5,6 +5,7 @@ from typing import List, TYPE_CHECKING, Dict, Any
 from .base import Entity
 from ..core.types import Team, GridPos, EntityKind, MoveDir
 from ..core.actions import Action
+from ..core.validation import validate_action_in_world
 
 if TYPE_CHECKING:
     from ..world.world import WorldState
@@ -59,15 +60,18 @@ class Aircraft(Entity):
         if not self.alive:
             return []  # Dead entities can't act
         
-        actions = [Action.wait()]
+        actions = []
+
+        wait_action = Action.wait()
+        if validate_action_in_world(world, self, wait_action).valid:
+            actions.append(wait_action)
         
         # Movement - only include moves that stay in bounds
         if self.can_move:
             for direction in MoveDir:
-                dx, dy = direction.delta
-                new_pos = (self.pos[0] + dx, self.pos[1] + dy)
-                if world.grid.in_bounds(new_pos):
-                    actions.append(Action.move(direction))
+                move_action = Action.move(direction)
+                if validate_action_in_world(world, self, move_action).valid:
+                    actions.append(move_action)
         
         # Shooting - only include targets in range and visible
         if self.can_shoot and self.missiles > 0:
@@ -77,9 +81,9 @@ class Aircraft(Entity):
             for target_id in visible_enemy_ids:
                 target = world.get_entity(target_id)
                 if target and target.alive:
-                    distance = world.grid.distance(self.pos, target.pos)
-                    if distance <= self.missile_max_range:
-                        actions.append(Action.shoot(target_id))
+                    shoot_action = Action.shoot(target_id)
+                    if validate_action_in_world(world, self, shoot_action).valid:
+                        actions.append(shoot_action)
         
         return actions
 

@@ -15,6 +15,7 @@ from typing import List, TYPE_CHECKING, Dict, Any
 from .base import Entity
 from ..core.types import Team, GridPos, EntityKind, MoveDir
 from ..core.actions import Action
+from ..core.validation import validate_action_in_world
 
 if TYPE_CHECKING: # False at run-time
     from ..world.world import WorldState
@@ -54,15 +55,20 @@ class AWACS(Entity):
         if not self.alive:
             return []
 
-        actions = [Action.wait()]
+        actions = []
+
+        wait_action = Action.wait()
+        if validate_action_in_world(world, self, wait_action).valid:
+            actions.append(wait_action)
 
         # AWACS can move - only include moves that stay in bounds
         if self.can_move:
             for direction in MoveDir:
                 dx, dy = direction.delta
                 new_pos = (self.pos[0] + dx, self.pos[1] + dy)
-                if world.grid.in_bounds(new_pos):
-                    actions.append(Action.move(direction))
+                move_action = Action.move(direction)
+                if validate_action_in_world(world, self, move_action).valid:
+                    actions.append(move_action)
 
         # No shooting - AWACS is unarmed
         return actions

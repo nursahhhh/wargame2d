@@ -136,6 +136,9 @@ class ActionValidation:
         - "COOLING_DOWN": SAM is in cooldown period
         - "INVALID_DIRECTION": Movement direction is invalid
         - "INVALID_TARGET": Target ID is invalid or target is dead
+        - "OUT_OF_BOUNDS": Movement would leave grid bounds
+        - "NOT_VISIBLE": Target is not currently observable
+        - "OUT_OF_RANGE": Target is outside weapon range
         - "NOT_SAM": Only SAMs can toggle radar
         - "INVALID_TOGGLE": Toggle parameter is invalid
     """

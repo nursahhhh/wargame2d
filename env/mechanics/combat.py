@@ -17,6 +17,7 @@ import random
 
 from ..core.types import ActionType
 from ..core.actions import Action
+from ..core.validation import validate_action_in_world
 
 if TYPE_CHECKING:
     from ..world.world import WorldState
@@ -239,9 +240,8 @@ class CombatResolver:
         """
         Resolve a single shooting action.
         
-        This method now uses entity-level validation first (checks alive, can_shoot,
-        missiles, SAM radar/cooldown), then performs world-state checks (target validity,
-        visibility, range).
+        This method now uses shared validation first (entity-level + world checks),
+        then performs resolution (hit probability, missile consumption, cooldown).
         
         Args:
             world: Current world state (modified in-place)
@@ -251,9 +251,8 @@ class CombatResolver:
         Returns:
             CombatResult with outcome
         """
-        # Use entity-level validation first (checks alive, can_shoot, missiles, 
-        # SAM radar/cooldown, target_id parameter)
-        validation = attacker.validate_action(world, action)
+        # Use shared validation first (entity-level + world-dependent checks)
+        validation = validate_action_in_world(world, attacker, action)
         if not validation.valid:
             return CombatResult(
                 attacker_id=attacker.id,
@@ -270,7 +269,7 @@ class CombatResolver:
         target_id = action.params.get("target_id")
         target = world.get_entity(target_id)
         
-        # Check target exists and is alive - TRULY DYNAMIC (might have died this turn)
+        # Safety: target should exist after validation, but guard just in case
         if not target or not target.alive:
             return CombatResult(
                 attacker_id=attacker.id,
@@ -283,26 +282,8 @@ class CombatResolver:
                 log=f"{attacker.label()} target invalid or dead"
             )
         
-        # Check visibility - TRULY DYNAMIC (AWACS might have died, changing visibility)
-        team_view = world.get_team_view(attacker.team)
-        if not team_view.can_target(target_id):
-            return CombatResult(
-                attacker_id=attacker.id,
-                target_id=target_id,
-                success=False,
-                hit=None,
-                distance=None,
-                hit_probability=None,
-                target_killed=False,
-                log=f"{attacker.label()} cannot target - not observed"
-            )
-        
         # Calculate distance for hit probability calculation
         distance = world.grid.distance(attacker.pos, target.pos)
-        
-        # Note: Range checking removed - get_allowed_actions() already filters
-        # out-of-range targets. If you need defensive validation for actions that
-        # didn't come from get_allowed_actions(), you can add it back here.
         
         # Calculate hit probability
         prob = hit_probability(

@@ -16,6 +16,7 @@ from typing import List, TYPE_CHECKING, Dict, Any
 from .base import Entity
 from ..core.types import Team, GridPos, EntityKind, ActionValidation
 from ..core.actions import Action
+from ..core.validation import validate_action_in_world
 
 if TYPE_CHECKING:
     from ..world.world import WorldState
@@ -102,10 +103,16 @@ class SAM(Entity):
         if not self.alive:
             return []
 
-        actions = [Action.wait()]
+        actions = []
+
+        wait_action = Action.wait()
+        if validate_action_in_world(world, self, wait_action).valid:
+            actions.append(wait_action)
 
         # SAMs can always toggle their radar
-        actions.append(Action.toggle(on=not self.on))
+        toggle_action = Action.toggle(on=not self.on)
+        if validate_action_in_world(world, self, toggle_action).valid:
+            actions.append(toggle_action)
 
         # Can only shoot if radar is ON, not cooling down, and has missiles
         if self.on and self._cooldown == 0 and self.missiles > 0:
@@ -116,9 +123,9 @@ class SAM(Entity):
             for target_id in visible_enemy_ids:
                 target = world.get_entity(target_id)
                 if target and target.alive:
-                    distance = world.grid.distance(self.pos, target.pos)
-                    if distance <= self.missile_max_range:
-                        actions.append(Action.shoot(target_id))
+                    shoot_action = Action.shoot(target_id)
+                    if validate_action_in_world(world, self, shoot_action).valid:
+                        actions.append(shoot_action)
 
         return actions
     

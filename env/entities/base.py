@@ -70,8 +70,8 @@ class Entity(ABC):
         - Entity-specific constraints (SAM radar/cooldown)
         - Basic parameter validity
         
-        World-state dependent checks (range, bounds, collisions) are handled
-        by the resolvers.
+        World-state dependent checks (range, bounds, visibility, collisions)
+        should be layered on by validate_action_in_world().
         
         Args:
             world: Current world state

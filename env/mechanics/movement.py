@@ -14,6 +14,7 @@ from dataclasses import dataclass
 
 from ..core.types import ActionType, MoveDir
 from ..core.actions import Action
+from ..core.validation import validate_action_in_world
 
 if TYPE_CHECKING:
     from ..world.world import WorldState
@@ -169,8 +170,8 @@ class MovementResolver:
         """
         Resolve a single movement action.
         
-        This method now uses entity-level validation first, then performs
-        world-state checks (bounds, collisions).
+        This method now uses shared validation first (entity-level + bounds),
+        then performs world-state checks (collisions).
         
         Args:
             world: Current world state (modified in-place)
@@ -182,8 +183,8 @@ class MovementResolver:
         """
         old_pos = entity.pos
         
-        # Use entity-level validation first (checks alive, can_move, direction)
-        validation = entity.validate_action(world, action)
+        # Use shared validation first (checks alive, can_move, direction, bounds)
+        validation = validate_action_in_world(world, entity, action)
         if not validation.valid:
             return MovementResult(
                 entity_id=entity.id,
@@ -201,10 +202,6 @@ class MovementResolver:
         new_x = old_pos[0] + dx
         new_y = old_pos[1] + dy
         new_pos = (new_x, new_y)
-        
-        # Note: Bounds checking removed - get_allowed_actions() already filters
-        # out-of-bounds moves. If you need defensive validation for actions that
-        # didn't come from get_allowed_actions(), you can add it back here.
         
         # Check collision - TRULY DYNAMIC (position might have just been occupied)
         if world.is_position_occupied(new_pos):
