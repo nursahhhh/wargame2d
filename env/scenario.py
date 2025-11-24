@@ -74,7 +74,8 @@ class Scenario:
         check_missile_exhaustion: bool = True,
         seed: Optional[int] = None,
         blue_entities: Optional[List[Entity]] = None,
-        red_entities: Optional[List[Entity]] = None
+        red_entities: Optional[List[Entity]] = None,
+        agents: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize a scenario with game configuration.
@@ -98,6 +99,7 @@ class Scenario:
         self.max_turns = max_turns
         self.check_missile_exhaustion = check_missile_exhaustion
         self.seed = seed
+        self.agents: Optional[Dict[str, Any]] = agents
         
         # Entities
         self.blue_entities: List[Entity] = []
@@ -158,7 +160,7 @@ class Scenario:
         Returns:
             Dict with config and entities
         """
-        return {
+        data = {
             "config": {
             "grid_width": self.grid_width,
             "grid_height": self.grid_height,
@@ -171,6 +173,9 @@ class Scenario:
             "blue_entities": self.blue_entities,
             "red_entities": self.red_entities
         }
+        if self.agents is not None:
+            data["agents"] = self._serialize_agents(self.agents)
+        return data
     
     def to_json_dict(self) -> Dict[str, Any]:
         """
@@ -179,7 +184,7 @@ class Scenario:
         Returns:
             JSON-serializable dictionary
         """
-        return {
+        data = {
             "config": {
             "grid_width": self.grid_width,
             "grid_height": self.grid_height,
@@ -192,6 +197,9 @@ class Scenario:
             "blue_entities": [e.to_dict() for e in self.blue_entities],
             "red_entities": [e.to_dict() for e in self.red_entities]
         }
+        if self.agents is not None:
+            data["agents"] = self._serialize_agents(self.agents)
+        return data
     
     @classmethod
     def from_json_dict(cls, data: Dict[str, Any]) -> Scenario:
@@ -213,7 +221,8 @@ class Scenario:
             max_no_move_turns=config.get("max_no_move_turns", 15),
             max_turns=config.get("max_turns"),
             check_missile_exhaustion=config.get("check_missile_exhaustion", True),
-            seed=config.get("seed")
+            seed=config.get("seed"),
+            agents=data.get("agents"),
         )
         
         # Load entities
@@ -243,7 +252,8 @@ class Scenario:
             max_no_move_turns=config.get("max_no_move_turns", 15),
             max_turns=config.get("max_turns"),
             check_missile_exhaustion=config.get("check_missile_exhaustion", True),
-            seed=config.get("seed")
+            seed=config.get("seed"),
+            agents=data.get("agents"),
         )
 
         def _to_entity(e: Any) -> Entity:
@@ -258,6 +268,19 @@ class Scenario:
             scenario.red_entities.append(_to_entity(entity_data))
 
         return scenario
+
+    @staticmethod
+    def _serialize_agents(agents: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Best-effort serialization for agent specs; uses to_dict when available.
+        """
+        serialized: Dict[str, Any] = {}
+        for key, value in agents.items():
+            if hasattr(value, "to_dict"):
+                serialized[key] = value.to_dict()  # type: ignore[attr-defined]
+            else:
+                serialized[key] = value
+        return serialized
     
     def save_json(self, filepath: str | Path, indent: int = 2) -> None:
         """

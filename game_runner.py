@@ -13,7 +13,13 @@ from dataclasses import dataclass, field
 from env import GridCombatEnv
 from env.scenario import Scenario
 from env.core.types import Team, GameResult
-from agents import BaseAgent
+from agents import (
+    AgentSpec,
+    BaseAgent,
+    PreparedAgent,
+    create_agent_from_spec,
+    normalize_agent_input,
+)
 
 
 @dataclass
@@ -83,8 +89,8 @@ class GameRunner:
     
     def __init__(
         self,
-        blue_agent: BaseAgent,
-        red_agent: BaseAgent,
+        blue_agent: BaseAgent | AgentSpec | Dict[str, Any],
+        red_agent: BaseAgent | AgentSpec | Dict[str, Any],
         verbose: bool = True,
         max_turns: Optional[int] = None
     ):
@@ -98,8 +104,8 @@ class GameRunner:
             max_turns: Maximum turns per episode (None = no limit,
                       will rely on environment victory conditions)
         """
-        self.blue_agent = blue_agent
-        self.red_agent = red_agent
+        self.blue_agent_input = normalize_agent_input(blue_agent)
+        self.red_agent_input = normalize_agent_input(red_agent)
         self.verbose = verbose
         self.max_turns = max_turns
         
@@ -111,7 +117,11 @@ class GameRunner:
         self.turn_history: List[TurnInfo] = []
         self.cumulative_rewards: Dict[Team, float] = {Team.BLUE: 0.0, Team.RED: 0.0}
     
-    def run_episode(self, scenario: Scenario) -> GameResult:
+    def run_episode(
+        self,
+        scenario: Scenario,
+        agent_specs: Optional[Dict[str, AgentSpec | Dict[str, Any]]] = None,
+    ) -> GameResult:
         """
         Run a complete game episode.
         
@@ -130,6 +140,21 @@ class GameRunner:
         
         self.env = GridCombatEnv(verbose=self.verbose)
         state = self.env.reset(scenario=scenario_dict)
+
+        # Choose agent specs: explicit overrides beat scenario-provided specs.
+        specs_override = agent_specs if agent_specs is not None else scenario_dict.get("agents")
+
+        # Instantiate agents (optionally from scenario-provided specs)
+        blue_agent = self._prepare_agent(
+            specs_override.get("blue") if specs_override else None,
+            self.blue_agent_input,
+            Team.BLUE,
+        )
+        red_agent = self._prepare_agent(
+            specs_override.get("red") if specs_override else None,
+            self.red_agent_input,
+            Team.RED,
+        )
         
         # Reset statistics
         self.turn_history = []
@@ -143,7 +168,7 @@ class GameRunner:
         
         if self.verbose:
             print("=" * 80)
-            print(f"Starting Game: {self.blue_agent} vs {self.red_agent}")
+            print(f"Starting Game: {self._agent_label(blue_agent.agent)} vs {self._agent_label(red_agent.agent)}")
             print(f"Grid: {world.grid.width}x{world.grid.height}")
             print(f"Initial entities: Blue={initial_blue_count}, Red={initial_red_count}")
             print("=" * 80)
@@ -162,8 +187,16 @@ class GameRunner:
                 break
             
             # Get actions from both agents
-            blue_actions, blue_meta = self.blue_agent.get_actions(state)
-            red_actions, red_meta = self.red_agent.get_actions(state)
+            blue_actions, blue_meta = blue_agent.agent.get_actions(
+                state,
+                commands=blue_agent.commands,
+                **blue_agent.act_params,
+            )
+            red_actions, red_meta = red_agent.agent.get_actions(
+                state,
+                commands=red_agent.commands,
+                **red_agent.act_params,
+            )
             self.last_agent_metadata = {"blue": blue_meta, "red": red_meta}
             
             # Combine actions
@@ -200,6 +233,26 @@ class GameRunner:
             self._print_summary(result)
         
         return result
+
+    def _prepare_agent(
+        self,
+        override_spec: AgentSpec | Dict[str, Any] | None,
+        default_input: BaseAgent | AgentSpec,
+        team: Team,
+    ) -> PreparedAgent:
+        """Build a PreparedAgent from either an override spec or the default input."""
+        agent_source = normalize_agent_input(override_spec) if override_spec else default_input
+        if isinstance(agent_source, BaseAgent):
+            return PreparedAgent(agent=agent_source, commands={}, act_params={})
+
+        spec = agent_source
+        if spec.team != team:
+            spec = spec.with_team(team)
+        return create_agent_from_spec(spec)
+
+    def _agent_label(self, agent: BaseAgent) -> str:
+        """Compact display name for logging."""
+        return agent.name if hasattr(agent, "name") else agent.__class__.__name__
     
     def _log_turn(self, turn_info: TurnInfo, state: Dict) -> None:
         """
@@ -297,8 +350,8 @@ class GameRunner:
 
 def run_single_game(
     scenario: Scenario,
-    blue_agent: BaseAgent,
-    red_agent: BaseAgent,
+    blue_agent: BaseAgent | AgentSpec | Dict[str, Any],
+    red_agent: BaseAgent | AgentSpec | Dict[str, Any],
     verbose: bool = True,
     max_turns: Optional[int] = None
 ) -> GameResult:
@@ -338,8 +391,8 @@ def run_single_game(
 
 def run_multiple_games(
     scenario: Scenario,
-    blue_agent: BaseAgent,
-    red_agent: BaseAgent,
+    blue_agent: BaseAgent | AgentSpec | Dict[str, Any],
+    red_agent: BaseAgent | AgentSpec | Dict[str, Any],
     num_games: int = 10,
     verbose: bool = False
 ) -> List[GameResult]:

@@ -38,10 +38,8 @@ from __future__ import annotations
 from typing import Dict, Any, Optional, List, Tuple
 from dataclasses import dataclass
 
-from .core.types import Team, ActionType, GameResult
+from .core.types import Team, GameResult
 from .core.actions import Action
-from .core.observations import Observation
-from .entities.base import Entity
 from .entities.sam import SAM
 from .world import WorldState
 from .scenario import Scenario

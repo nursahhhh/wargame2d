@@ -10,8 +10,10 @@ from env.core.actions import Action
 from env.core.types import Team
 from env.world import WorldState
 from .base_agent import BaseAgent
+from .registry import register_agent
 
 
+@register_agent("random")
 class RandomAgent(BaseAgent):
     """
     Agent that takes random actions.
@@ -26,9 +28,10 @@ class RandomAgent(BaseAgent):
         self, 
         team: Team, 
         name: str = None,
-        shoot_probability: float = 0.3,
-        move_probability: float = 0.5,
-        seed: Optional[int] = None
+        shoot_probability: float | None = None,
+        move_probability: float | None = None,
+        seed: Optional[int] = None,
+        **_: Any,
     ):
         """
         Initialize random agent.
@@ -36,13 +39,11 @@ class RandomAgent(BaseAgent):
         Args:
             team: Team to control
             name: Agent name (default: "RandomAgent")
-            shoot_probability: Probability of attempting to shoot when possible
-            move_probability: Probability of moving vs waiting
+            shoot_probability: Ignored (kept for backward compatibility)
+            move_probability: Ignored (kept for backward compatibility)
             seed: Random seed for reproducibility (None = random)
         """
         super().__init__(team, name)
-        self.shoot_probability = shoot_probability
-        self.move_probability = move_probability
         self.rng = random.Random(seed)
     
     def get_actions(
