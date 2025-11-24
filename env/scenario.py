@@ -226,6 +226,38 @@ class Scenario:
             scenario.red_entities.append(entity)
         
         return scenario
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> Scenario:
+        """
+        Deserialize from the in-memory scenario dict used by env.reset().
+        
+        This accepts both entity objects and JSON-like entity dicts. Entities
+        are deep-copied to avoid sharing mutable instances.
+        """
+        config = data.get("config", {})
+        scenario = cls(
+            grid_width=config.get("grid_width", 20),
+            grid_height=config.get("grid_height", 20),
+            max_stalemate_turns=config.get("max_stalemate_turns", 60),
+            max_no_move_turns=config.get("max_no_move_turns", 15),
+            max_turns=config.get("max_turns"),
+            check_missile_exhaustion=config.get("check_missile_exhaustion", True),
+            seed=config.get("seed")
+        )
+
+        def _to_entity(e: Any) -> Entity:
+            if isinstance(e, Entity):
+                return Entity.from_dict(e.to_dict())
+            return Entity.from_dict(e)
+
+        for entity_data in data.get("blue_entities", []):
+            scenario.blue_entities.append(_to_entity(entity_data))
+
+        for entity_data in data.get("red_entities", []):
+            scenario.red_entities.append(_to_entity(entity_data))
+
+        return scenario
     
     def save_json(self, filepath: str | Path, indent: int = 2) -> None:
         """

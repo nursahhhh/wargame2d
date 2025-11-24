@@ -894,7 +894,7 @@ while not done and turn < 100:
 **Main API Methods:**
 ```python
 # Initialize with scenario
-env.reset(scenario: Dict[str, Any]) -> Dict[str, Any]
+env.reset(scenario: Scenario | Dict[str, Any]) -> Dict[str, Any]
 
 # Execute turn (main game loop)
 env.step(actions: Dict[int, Action]) -> Tuple[state, rewards, done, info]

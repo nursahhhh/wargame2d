@@ -68,6 +68,23 @@ class StepInfo:
     combat: CombatResolutionResult
     victory: VictoryResult
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize step info to a plain dict."""
+        return {
+            "movement": self.movement.to_dict(),
+            "combat": self.combat.to_dict(),
+            "victory": self.victory.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "StepInfo":
+        """Deserialize step info from a dict."""
+        return cls(
+            movement=ActionResolutionResult.from_dict(data["movement"]),
+            combat=CombatResolutionResult.from_dict(data["combat"]),
+            victory=VictoryResult.from_dict(data["victory"]),
+        )
+
 
 class GridCombatEnv:
     """
@@ -101,12 +118,7 @@ class GridCombatEnv:
         
         # World state (will be initialized in reset())
         self.world: Optional[WorldState] = None
-        
-        # Scenario config (will be set in reset())s
-        self._max_stalemate_turns: Optional[int] = None
-        self._max_no_move_turns: Optional[int] = None
-        self._max_turns: Optional[int] = None
-        self._check_missile_exhaustion: Optional[bool] = None
+        self._scenario: Optional[Scenario] = None
         
         # Mechanics modules (stateless, can be reused)
         self._sensors = SensorSystem()
@@ -119,17 +131,19 @@ class GridCombatEnv:
     # For continuation games, we might reset the env with scenario and world and fix the initialization logic accordingly.
     def reset(
         self, 
-        scenario: Scenario | Dict[str, Any]
+        scenario: Scenario | Dict[str, Any],
+        world: WorldState | Dict[str, Any] | None = None,
     ) -> Dict[str, Any]:
         """
-        Reset the environment with a scenario.
+        Reset the environment with a scenario, optionally using an existing world.
         
         The scenario contains all configuration including grid size,
         game rules, and entities. Scenarios are the ONLY way to configure
-        the environment.
+        the environment. Optionally, an existing WorldState (or its dict)
+        can be provided to resume from a saved state.
         
         Args:
-            scenario: Dict from Scenario.to_dict():
+            scenario: Scenario instance or Dict from Scenario.to_dict():
                 {
                     "config": {
                         "grid_width": int,
@@ -143,62 +157,71 @@ class GridCombatEnv:
                     "blue_entities": [entity1, entity2, ...],
                     "red_entities": [entity3, entity4, ...]
                 }
+            world: Optional WorldState or dict (from WorldState.to_dict()).
+                If provided, the environment will resume from this world
+                instead of creating a new one from the scenario entities.
         
         Returns:
             Initial state (same structure as step())
         
         Raises:
-            ValueError: If scenario is missing required config
+            ValueError: If scenario is missing required config, or if the
+                provided world grid does not match the scenario config.
         """
         # Normalize scenario input (supports Scenario or raw dict)
         if isinstance(scenario, Scenario):
             # Clone to avoid sharing mutable entities with caller
-            scenario_data = scenario.clone().to_dict()
+            scenario_obj = scenario.clone()
         else:
-            scenario_data = scenario
-
-        # Extract config from scenario
-        if "config" not in scenario_data:
-            raise ValueError("Scenario must contain 'config' dictionary")
+            if "config" not in scenario:
+                raise ValueError("Scenario must contain 'config' dictionary")
+            scenario_obj = Scenario.from_dict(scenario)
         
-        scenario_config = scenario_data["config"]
-        
-        # Extract grid settings
-        grid_width = scenario_config["grid_width"]
-        grid_height = scenario_config["grid_height"]
-        seed = scenario_config.get("seed", None)
-        
-        # Extract victory condition settings
-        self._max_stalemate_turns = scenario_config["max_stalemate_turns"]
-        self._max_no_move_turns = scenario_config["max_no_move_turns"]
-        self._max_turns = scenario_config.get("max_turns", None)
-        self._check_missile_exhaustion = scenario_config["check_missile_exhaustion"]
+        self._scenario = scenario_obj
         
         # Initialize victory checker with scenario config
         self._victory_checker = VictoryConditions(
-            max_stalemate_turns=self._max_stalemate_turns,
-            max_no_move_turns=self._max_no_move_turns,
-            max_turns=self._max_turns,
-            check_missile_exhaustion=self._check_missile_exhaustion
+            max_stalemate_turns=scenario_obj.max_stalemate_turns,
+            max_no_move_turns=scenario_obj.max_no_move_turns,
+            max_turns=scenario_obj.max_turns,
+            check_missile_exhaustion=scenario_obj.check_missile_exhaustion
         )
         
-        # Create new world
-        self.world = WorldState(
-            width=grid_width,
-            height=grid_height,
-            seed=seed
-        )
-        
-        # Reset counters (stored in world)
-        self.world.turn = 0
-        self.world.turns_without_shooting = 0
-        self.world.turns_without_movement = 0
-        
-        # Add entities from scenario
-        for entity in scenario_data.get("blue_entities", []):
-            self.world.add_entity(entity)
-        for entity in scenario_data.get("red_entities", []):
-            self.world.add_entity(entity)
+        if world is None:
+            # Create new world from scenario
+            self.world = WorldState(
+                width=scenario_obj.grid_width,
+                height=scenario_obj.grid_height,
+                seed=scenario_obj.seed
+            )
+            
+            # Reset counters (stored in world)
+            self.world.turn = 0
+            self.world.turns_without_shooting = 0
+            self.world.turns_without_movement = 0
+            
+            # Add entities from scenario
+            for entity in scenario_obj.blue_entities:
+                self.world.add_entity(entity)
+            for entity in scenario_obj.red_entities:
+                self.world.add_entity(entity)
+        else:
+            # Resume from provided world (clone to avoid side effects)
+            if isinstance(world, WorldState):
+                world_obj = world.clone()
+            else:
+                world_obj = WorldState.from_dict(world)
+
+            # Validate grid dimensions against scenario config
+            grid = world_obj.grid
+            if grid.width != scenario_obj.grid_width or grid.height != scenario_obj.grid_height:
+                raise ValueError(
+                    "Provided world grid size does not match scenario config: "
+                    f"world=({grid.width}x{grid.height}), "
+                    f"scenario=({scenario_obj.grid_width}x{scenario_obj.grid_height})"
+                )
+
+            self.world = world_obj
         
         # Refresh observations after adding entities
         self._sensors.refresh_all_observations(self.world)
@@ -289,12 +312,12 @@ class GridCombatEnv:
         """
         return {
             "world": self.world,
-            "config": { # todo: maybe make those part of world.config?
-                "max_stalemate_turns": self._max_stalemate_turns,
-                "max_no_move_turns": self._max_no_move_turns,
-                "max_turns": self._max_turns,
-                "check_missile_exhaustion": self._check_missile_exhaustion,
-            }
+            "config": {
+                "max_stalemate_turns": self._scenario.max_stalemate_turns,
+                "max_no_move_turns": self._scenario.max_no_move_turns,
+                "max_turns": self._scenario.max_turns,
+                "check_missile_exhaustion": self._scenario.check_missile_exhaustion,
+            },
         }
     
     def _housekeeping(self) -> None:
