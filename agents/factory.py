@@ -10,9 +10,8 @@ from .spec import AgentSpec
 
 @dataclass
 class PreparedAgent:
-    """Agent instance paired with static per-episode command/act params."""
+    """Agent instance paired with static per-episode parameters."""
     agent: BaseAgent
-    commands: Dict[str, Any]
     act_params: Dict[str, Any]
 
 
@@ -31,22 +30,5 @@ def create_agent_from_spec(spec: AgentSpec) -> PreparedAgent:
 
     return PreparedAgent(
         agent=agent,
-        commands=spec.commands or {},
         act_params=spec.act_params or {},
     )
-
-
-def normalize_agent_input(
-    agent_input: BaseAgent | AgentSpec | Dict[str, Any],
-) -> BaseAgent | AgentSpec:
-    """
-    Accept an agent instance, AgentSpec, or raw dict and normalize to a usable form.
-    Raw dicts are converted to AgentSpec.
-    """
-    if isinstance(agent_input, BaseAgent):
-        return agent_input
-    if isinstance(agent_input, AgentSpec):
-        return agent_input
-    if isinstance(agent_input, dict):
-        return AgentSpec.from_dict(agent_input)
-    raise TypeError("agent_input must be BaseAgent, AgentSpec, or dict")

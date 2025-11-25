@@ -18,7 +18,6 @@ class AgentSpec:
     team: Team
     name: Optional[str] = None
     init_params: Dict[str, Any] = field(default_factory=dict)
-    commands: Dict[str, Any] = field(default_factory=dict)
     act_params: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -28,7 +27,6 @@ class AgentSpec:
             "team": self.team.name,
             "name": self.name,
             "init_params": self.init_params,
-            "commands": self.commands,
             "act_params": self.act_params,
         }
 
@@ -44,17 +42,5 @@ class AgentSpec:
             team=team,
             name=data.get("name"),
             init_params=data.get("init_params", {}) or {},
-            commands=data.get("commands", {}) or {},
             act_params=data.get("act_params", {}) or {},
-        )
-
-    def with_team(self, team: Team) -> "AgentSpec":
-        """Return a copy with the provided team."""
-        return AgentSpec(
-            type=self.type,
-            team=team,
-            name=self.name,
-            init_params=self.init_params,
-            commands=self.commands,
-            act_params=self.act_params,
         )

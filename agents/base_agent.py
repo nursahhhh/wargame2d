@@ -5,9 +5,12 @@ All agents must implement this interface to interact with the environment.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Dict, Any, Optional, TYPE_CHECKING
 from env.core.actions import Action
 from env.core.types import Team
+
+if TYPE_CHECKING:
+    from env.environment import StepInfo
 
 
 class BaseAgent(ABC):
@@ -40,7 +43,7 @@ class BaseAgent(ABC):
     def get_actions(
         self,
         state: Dict[str, Any],
-        commands: Dict[str, Any] | None = None,
+        step_info: Optional["StepInfo"] = None,
         **kwargs: Any,
     ) -> tuple[Dict[int, Action], Dict[str, Any]]:
         """
@@ -49,7 +52,7 @@ class BaseAgent(ABC):
         This is called once per turn. The agent should:
         1. Extract relevant information from the state
         2. Use team_view for fog-of-war observations
-        3. Consume optional runtime commands/instructions
+        3. Optionally consume previous StepInfo (movement/combat/victory)
         4. Decide on actions for each entity
         5. Return (actions, metadata)
         
@@ -62,11 +65,11 @@ class BaseAgent(ABC):
                     "check_missile_exhaustion": bool,
                 }
             }
-        commands:
-            Optional dict of runtime instructions (e.g., LLM prompts,
-            debugging flags). May be ignored by simple agents.
+        step_info:
+            Optional per-turn resolution info from the previous step.
+            Agents must still respect fog-of-war if they use it.
         **kwargs:
-            Reserved for future fields (e.g., step_info, history).
+            Reserved for future fields (e.g., history).
         
         To get your entities:
             world = state["world"]
@@ -79,7 +82,6 @@ class BaseAgent(ABC):
         
         Args:
             state: Current game state from environment
-            commands: Optional command dictionary for runtime guidance
         
         Returns:
             Tuple of:
