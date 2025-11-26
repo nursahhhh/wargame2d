@@ -314,7 +314,10 @@
       <input id="backend-url" type="text" value="http://localhost:8000" style="width: 220px;">
       <span id="connection-status" class="pill dot warn clickable">Disconnected</span>
     </div>
-    <button class="btn success" id="start-btn">▶ Launch Scenario</button>
+    <div class="row" style="gap:8px;">
+      <button class="btn success" id="start-btn">▶ Launch Scenario</button>
+      <button class="btn" id="fork-btn" title="Start a new live run from the selected frame">⧉ Fork from frame</button>
+    </div>
     <div class="spacer"></div>
     <span class="pill" id="mode-pill">Idle</span>
     <button class="btn" id="export-btn" disabled title="No frames to export">⬇ Export</button>
@@ -370,9 +373,6 @@
         <div>
           <div class="drop-zone" id="upload-drop">Drop scenario or recording JSON</div>
           <input type="file" id="upload-file" accept=".json" style="display:none">
-          <div class="row" style="margin-top:8px;">
-            <button class="btn" id="resume-from-frame-btn" title="Start a new live run from the selected frame">Branch from this frame</button>
-          </div>
           <div class="summary-row" id="upload-summary-row">
             <button class="link-btn" id="upload-summary" style="display:none"></button>
             <span class="pill" id="upload-type-pill" style="display:none"></span>
@@ -602,6 +602,21 @@
       btn.title = hasScenario ? "Start a new live run with the loaded scenario" : "Load a scenario to start";
     }
 
+    function updateForkButton() {
+      const btn = document.getElementById("fork-btn");
+      if (!btn) return;
+      const hasScenario = !!state.scenario;
+      const hasFrames = state.frames.length > 0;
+      btn.disabled = !(hasScenario && hasFrames);
+      if (!hasFrames) {
+        btn.title = "Load or play to get frames first";
+      } else if (!hasScenario) {
+        btn.title = "Load a scenario to fork";
+      } else {
+        btn.title = "Start a new live run from the selected frame";
+      }
+    }
+
     function updateExportButton() {
       const btn = document.getElementById("export-btn");
       if (!btn) return;
@@ -698,6 +713,7 @@
       updateStartButton();
       updateExportButton();
       updateUploadSummary();
+      updateForkButton();
     }
 
     function getVictoryForIndex(idx) {
@@ -959,6 +975,7 @@
         updateInjectionStatus();
         updateTimeline();
         setModePill();
+        updateForkButton();
         await stepLive(); // fetch first frame
         if (state.playing) loop();
       } catch (err) {
@@ -1048,6 +1065,27 @@
     });
     document.getElementById("connection-status").addEventListener("click", pingBackend);
     document.getElementById("start-btn").addEventListener("click", () => startLive(null));
+    document.getElementById("fork-btn").addEventListener("click", () => {
+      if (!state.frames.length) return alert("No frame selected to fork from.");
+      if (!state.recordingScenario && !state.scenario) {
+        return alert("Recording missing scenario. Load a scenario first.");
+      }
+      if (state.recordingScenario) {
+        state.scenario = state.recordingScenario;
+        state.scenarioName = state.recordingName ? `${state.recordingName} scenario` : "recording scenario";
+        if (state.uploadInfo?.kind === "recording") {
+          state.uploadInfo.detail = `${state.frames.length} frames • ${summarizeScenario(state.recordingScenario)}`;
+        }
+        updateStartButton();
+        updateExportButton();
+        updateUploadSummary();
+      }
+      const frame = state.frames[state.currentIndex];
+      const worldOverride = frame.world
+        ? { ...frame.world, game_over: false, winner: null }
+        : null;
+      startLive(worldOverride);
+    });
     document.getElementById("upload-summary").addEventListener("click", () => {
       const source = state.uploadInfo?.kind === "recording" ? "recording" : "scenario";
       openScenarioModal(source);
@@ -1547,6 +1585,7 @@
       slider.value = state.currentIndex;
       document.getElementById("timeline-label").textContent = `${state.currentIndex} / ${slider.max}`;
       updateExportButton();
+      updateForkButton();
     }
 
     function updateMeta() {
@@ -1564,6 +1603,7 @@
       document.getElementById("entity-meta").textContent =
         `${alive}/${entities.length} alive`;
       document.getElementById("mode-meta").textContent = state.mode;
+      updateForkButton();
     }
 
     function setModePill() {
