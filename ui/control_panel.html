@@ -241,6 +241,33 @@
       background: #0b1020;
     }
     .modal-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    details.collapsible {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #0f1421;
+    }
+    details.collapsible summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    details.collapsible summary::-webkit-details-marker { display: none; }
+    .summary-actions { display: inline-flex; gap: 8px; align-items: center; }
+    .pill-btn {
+      border: 1px solid var(--border);
+      background: #1b2235;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -366,18 +393,33 @@
       <div class="surface">
         <div class="card-title">Frame Details</div>
         <div class="stack">
-          <div>
-            <div class="label">Actions</div>
+          <details class="collapsible">
+            <summary>
+              <span class="label">Actions</span>
+              <span class="summary-actions">
+                <button class="pill-btn" id="open-actions-modal" type="button">Open</button>
+              </span>
+            </summary>
             <pre id="actions-json">{}</pre>
-          </div>
-          <div>
-            <div class="label">Metadata</div>
+          </details>
+          <details class="collapsible">
+            <summary>
+              <span class="label">Metadata</span>
+              <span class="summary-actions">
+                <button class="pill-btn" id="open-meta-modal" type="button">Open</button>
+              </span>
+            </summary>
             <pre id="meta-json">{}</pre>
-          </div>
-          <div>
-            <div class="label">Info</div>
+          </details>
+          <details class="collapsible">
+            <summary>
+              <span class="label">Info</span>
+              <span class="summary-actions">
+                <button class="pill-btn" id="open-info-modal" type="button">Open</button>
+              </span>
+            </summary>
             <pre id="info-json">{}</pre>
-          </div>
+          </details>
         </div>
       </div>
     </div>
@@ -428,6 +470,20 @@
         <button class="btn ghost" id="clear-injection-btn">Clear</button>
         <span class="pill warn" id="injection-modal-status">Not applied</span>
       </div>
+    </div>
+  </div>
+
+  <div class="modal" id="frame-detail-modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <div class="flex-between">
+        <div>
+          <div class="label" id="frame-modal-label">Frame detail</div>
+          <div class="tag" id="frame-modal-meta">Read only</div>
+        </div>
+        <button class="btn ghost" id="frame-modal-close">Close</button>
+      </div>
+      <textarea id="frame-modal-editor" spellcheck="false" readonly></textarea>
     </div>
   </div>
 
@@ -592,6 +648,11 @@
     const modalStatus = document.getElementById("scenario-modal-status");
     let currentScenarioSource = null; // "scenario" | "recording"
 
+    const frameModal = document.getElementById("frame-detail-modal");
+    const frameModalEditor = document.getElementById("frame-modal-editor");
+    const frameModalLabel = document.getElementById("frame-modal-label");
+    const frameModalMeta = document.getElementById("frame-modal-meta");
+
     function setModalStatus(text, variant = "warn") {
       modalStatus.textContent = text;
       modalStatus.classList.remove("good", "bad", "warn");
@@ -638,6 +699,13 @@
         setModalStatus("Live scenario updated", "good");
         updateScenarioSummary();
       }
+    }
+
+    function openFrameModal(label, data) {
+      frameModalLabel.textContent = label;
+      frameModalMeta.textContent = "Read only";
+      frameModalEditor.value = JSON.stringify(data ?? {}, null, 2);
+      frameModal.classList.add("open");
     }
 
     // ----------- Connection -----------
@@ -947,6 +1015,23 @@
       state.injectionMode = "once";
       document.getElementById("injection-modal-editor").value = getInjectionTemplate();
       updateInjectionStatus();
+    });
+    document.getElementById("frame-modal-close").addEventListener("click", () => frameModal.classList.remove("open"));
+    document.querySelector("#frame-detail-modal .modal-backdrop").addEventListener("click", () => frameModal.classList.remove("open"));
+    document.getElementById("open-actions-modal").addEventListener("click", e => {
+      e.stopPropagation();
+      const frame = state.frames[state.currentIndex] || {};
+      openFrameModal("Actions", frame.actions || []);
+    });
+    document.getElementById("open-meta-modal").addEventListener("click", e => {
+      e.stopPropagation();
+      const frame = state.frames[state.currentIndex] || {};
+      openFrameModal("Metadata", frame.action_metadata || {});
+    });
+    document.getElementById("open-info-modal").addEventListener("click", e => {
+      e.stopPropagation();
+      const frame = state.frames[state.currentIndex] || {};
+      openFrameModal("Info", frame.step_info || {});
     });
 
     // ----------- Rendering -----------
