@@ -314,9 +314,9 @@
               <button class="btn" id="export-btn">Export Recording</button>
             </div>
             <div class="summary-row" id="scenario-summary-row">
-              <div id="scenario-summary" class="summary-text">No scenario loaded.</div>
-              <button class="link-btn" id="scenario-view-btn" style="display:none">View / Edit JSON</button>
-              <button class="link-btn" id="scenario-clear-btn" style="display:none">Clear</button>
+              <button class="link-btn" id="scenario-summary" style="display:none"></button>
+              <button class="link-btn" id="scenario-clear-btn" aria-label="Clear scenario" style="display:none">✕</button>
+              <div class="summary-text" id="scenario-empty">No scenario loaded.</div>
             </div>
           </div>
           <div>
@@ -327,9 +327,9 @@
               <button class="btn" id="resume-from-frame-btn">Start backend from this frame</button>
             </div>
             <div class="summary-row" id="recording-summary-row">
-              <div id="recording-summary" class="summary-text">No recording loaded.</div>
-              <button class="link-btn" id="recording-scenario-view-btn" style="display:none">View recording scenario</button>
-              <button class="link-btn" id="recording-clear-btn" style="display:none">Clear</button>
+              <button class="link-btn" id="recording-summary" style="display:none"></button>
+              <button class="link-btn" id="recording-clear-btn" aria-label="Clear recording" style="display:none">✕</button>
+              <div class="summary-text" id="recording-empty">No recording loaded.</div>
             </div>
           </div>
         </div>
@@ -551,34 +551,38 @@
     }
 
     function updateScenarioSummary() {
-      const summaryEl = document.getElementById("scenario-summary");
-      const viewBtn = document.getElementById("scenario-view-btn");
+      const summaryBtn = document.getElementById("scenario-summary");
       const clearBtn = document.getElementById("scenario-clear-btn");
+      const empty = document.getElementById("scenario-empty");
       if (!state.scenario) {
-        summaryEl.textContent = "No scenario loaded.";
-        viewBtn.style.display = "none";
+        summaryBtn.style.display = "none";
         clearBtn.style.display = "none";
+        empty.style.display = "block";
         return;
       }
-      summaryEl.textContent = `Loaded ${state.scenarioName || "scenario.json"} — ${summarizeScenario(state.scenario)}`;
-      viewBtn.style.display = "inline-flex";
+      summaryBtn.textContent = `${state.scenarioName || "scenario.json"} — ${summarizeScenario(state.scenario)}`;
+      summaryBtn.style.display = "inline-flex";
       clearBtn.style.display = "inline-flex";
+      empty.style.display = "none";
     }
 
     function updateRecordingSummary() {
-      const summaryEl = document.getElementById("recording-summary");
-      const viewBtn = document.getElementById("recording-scenario-view-btn");
+      const summaryBtn = document.getElementById("recording-summary");
       const clearBtn = document.getElementById("recording-clear-btn");
+      const empty = document.getElementById("recording-empty");
       if (!state.frames.length) {
-        summaryEl.textContent = "No recording loaded.";
-        viewBtn.style.display = "none";
+        summaryBtn.style.display = "none";
         clearBtn.style.display = "none";
+        empty.style.display = "block";
         return;
       }
       const scenarioNote = state.recordingScenario ? "scenario available" : "no scenario";
-      summaryEl.textContent = `Loaded ${state.recordingName || "recording.json"} — ${state.frames.length} frames, ${scenarioNote}`;
-      viewBtn.style.display = state.recordingScenario ? "inline-flex" : "none";
+      summaryBtn.textContent = `${state.recordingName || "recording.json"} — ${state.frames.length} frames, ${scenarioNote}`;
+      summaryBtn.style.display = "inline-flex";
+      summaryBtn.disabled = !state.recordingScenario;
+      summaryBtn.title = state.recordingScenario ? "View recording scenario JSON" : "No scenario in recording";
       clearBtn.style.display = "inline-flex";
+      empty.style.display = "none";
     }
 
     const modal = document.getElementById("scenario-modal");
@@ -822,8 +826,8 @@
     });
     document.getElementById("ping-btn").addEventListener("click", pingBackend);
     document.getElementById("start-btn").addEventListener("click", () => startLive(null));
-    document.getElementById("scenario-view-btn").addEventListener("click", () => openScenarioModal("scenario"));
-    document.getElementById("recording-scenario-view-btn").addEventListener("click", () => openScenarioModal("recording"));
+    document.getElementById("scenario-summary").addEventListener("click", () => openScenarioModal("scenario"));
+    document.getElementById("recording-summary").addEventListener("click", () => openScenarioModal("recording"));
     document.getElementById("scenario-clear-btn").addEventListener("click", () => {
       state.scenario = null;
       state.scenarioName = null;
