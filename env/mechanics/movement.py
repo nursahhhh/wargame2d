@@ -129,14 +129,15 @@ class MovementResolver:
         Args:
             world: Current world state (modified in-place)
             actions: Map of entity_id -> Action. Non-Action values are ignored with a log.
-            randomize_order: If True, shuffle movement order to prevent ID bias
+            randomize_order: If True, shuffle the full action order to prevent ID bias
         
         Returns:
             ActionResolutionResult with all outcomes
         """
         alive_entities = {entity.id: entity for entity in world.get_alive_entities()}
 
-        movement_queue: List[tuple[Entity, Action]] = []
+        # Build a single resolution queue so every action type is randomized consistently
+        resolution_queue: List[tuple[Entity, Action]] = []
         movement_results: List[MovementResult] = []
         logs: List[str] = []
 
@@ -150,29 +151,28 @@ class MovementResolver:
                 logs.append(f"Action provided for unknown or dead entity {entity_id}; ignoring")
                 continue
 
+            resolution_queue.append((entity, action))
+
+        if randomize_order:
+            world.rng.shuffle(resolution_queue)
+
+        movement_occurred = False
+
+        # Resolve in shuffled order so execution and logs align
+        for entity, action in resolution_queue:
             if action.type == ActionType.MOVE:
-                movement_queue.append((entity, action))
+                result, log_message = self.resolve_single(world, entity, action)
+                movement_results.append(result)
+                movement_occurred = movement_occurred or result.success
             elif action.type == ActionType.TOGGLE:
-                logs.append(self._resolve_toggle(entity, action))
+                log_message = self._resolve_toggle(entity, action)
             elif action.type == ActionType.WAIT:
-                logs.append(f"{entity.label()} waits")
+                log_message = f"{entity.label()} waits"
             else:
                 # SHOOT and other action types are handled elsewhere
-                logs.append(
-                    f"{entity.label()} action {action.type.name} ignored in movement phase"
-                )
+                continue
 
-        # Randomize movement order to prevent ID bias
-        if randomize_order:
-            world.rng.shuffle(movement_queue)
-
-        # Process each movement
-        for entity, action in movement_queue:
-            result, log_message = self.resolve_single(world, entity, action)
-            movement_results.append(result)
             logs.append(log_message)
-
-        movement_occurred = any(result.success for result in movement_results)
 
         # Update movement counter
         if movement_occurred:

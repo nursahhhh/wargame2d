@@ -216,9 +216,10 @@ class CombatResolver:
         """
         # Resolve all combat actions
         combat_results = self.resolve_all(world, actions, randomize_order)
+        kill_order = self._extract_kill_order(combat_results)
         
         # Apply deaths from combat
-        death_logs, killed_entity_ids = self.apply_pending_deaths(world)
+        death_logs, killed_entity_ids = self.apply_pending_deaths(world, kill_order)
         
         # Check if any combat occurred
         combat_occurred = self.has_combat_occurred(combat_results)
@@ -397,7 +398,11 @@ class CombatResolver:
         return any(result.success for result in results)
     
 
-    def apply_pending_deaths(self, world: WorldState) -> tuple[List[str], List[int]]:
+    def apply_pending_deaths(
+        self,
+        world: WorldState,
+        kill_order: List[int] | None = None
+    ) -> tuple[List[str], List[int]]:
         """
         Apply all pending kills marked during combat.
         
@@ -413,10 +418,21 @@ class CombatResolver:
                 death_logs: Human-readable messages about deaths
                 killed_entity_ids: List of entity IDs that were killed
         """
-        logs = []
-        killed_ids = []
+        logs: List[str] = []
+        killed_ids: List[int] = []
+        pending = world.get_pending_kills()
+        kill_ids = []
+
+        if kill_order is None:
+            kill_ids = list(pending)
+        else:
+            seen = set()
+            for entity_id in kill_order:
+                if entity_id in pending and entity_id not in seen:
+                    kill_ids.append(entity_id)
+                    seen.add(entity_id)
         
-        for entity_id in world.get_pending_kills():
+        for entity_id in kill_ids:
             entity = world.get_entity(entity_id)
             if entity and entity.alive:
                 entity.alive = False
@@ -427,3 +443,13 @@ class CombatResolver:
         world.clear_pending_kills()
         
         return logs, killed_ids
+
+    def _extract_kill_order(self, combat_results: List[CombatResult]) -> List[int]:
+        """
+        Preserve the order in which kills were marked during combat resolution.
+        """
+        order: List[int] = []
+        for result in combat_results:
+            if result.target_killed and result.target_id is not None:
+                order.append(result.target_id)
+        return order
