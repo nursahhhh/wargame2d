@@ -1541,6 +1541,15 @@
           : [...(obs.visible_enemy_ids || []), ...(obs.friendly_ids || [])]
       );
       const viewTeam = state.view.toUpperCase();
+      // Track reciprocal target pairs so we can offset overlapping lines
+      const pairCount = {};
+      actions.forEach(a => {
+        if (!a.params?.target_id) return;
+        const aId = a.entity_id;
+        const bId = a.params.target_id;
+        const key = aId < bId ? `${aId}-${bId}` : `${bId}-${aId}`;
+        pairCount[key] = (pairCount[key] || 0) + 1;
+      });
 
       for (const action of actions) {
         const actor = byId[action.entity_id];
@@ -1576,13 +1585,24 @@
           if (target) {
             const tpos = target.position || target.pos || [0, 0];
             const [tx, tyRaw] = tpos;
-            const txPx = originX + tx * gridSize + gridSize / 2;
-            const tyPx = originY + (world.grid.height - tyRaw - 1) * gridSize + gridSize / 2;
+            let txPx = originX + tx * gridSize + gridSize / 2;
+            let tyPx = originY + (world.grid.height - tyRaw - 1) * gridSize + gridSize / 2;
+            // If reciprocal edge exists, offset the line a bit to avoid overlap
+            const key = actor.id < target.id ? `${actor.id}-${target.id}` : `${target.id}-${actor.id}`;
+            const isReciprocal = pairCount[key] >= 2;
+            let ox = 0, oy = 0, dx = txPx - cx, dy = tyPx - cy;
+            if (isReciprocal) {
+              const len = Math.hypot(dx, dy) || 1;
+              const sign = actor.id < target.id ? 1 : -1;
+              const offset = 8;
+              ox = (-dy / len) * offset * sign;
+              oy = (dx / len) * offset * sign;
+            }
             ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            ctx.lineTo(txPx, tyPx);
+            ctx.moveTo(cx + ox, cy + oy);
+            ctx.lineTo(txPx + ox, tyPx + oy);
             ctx.stroke();
-            drawArrowHead(txPx, tyPx, txPx - cx, tyPx - cy, true);
+            drawArrowHead(txPx + ox, tyPx + oy, dx, dy, true);
           }
         }
       }
