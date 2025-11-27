@@ -1597,17 +1597,21 @@
               const offset = Math.max(14, gridSize * 0.4);
               ox = (-dy / len) * offset * sign;
               oy = (dx / len) * offset * sign;
-              const bend = 1.6;
-              const midX = (cx + txPx) / 2 + ox * bend;
-              const midY = (cy + tyPx) / 2 + oy * bend;
+              const startX = cx;
+              const startY = cy;
+              const endX = txPx + ox;
+              const endY = tyPx + oy;
+              const arcOffset = Math.max(gridSize * 0.35, 12);
+              const midX = (startX + endX) / 2;
+              const midY = (startY + endY) / 2 - arcOffset;
               ctx.beginPath();
-              ctx.moveTo(cx + ox, cy + oy);
-              ctx.quadraticCurveTo(midX, midY, txPx + ox, tyPx + oy);
+              ctx.moveTo(startX, startY);
+              ctx.quadraticCurveTo(midX, midY, endX, endY);
               ctx.stroke();
               // Use the curve's final direction for arrowhead
-              const ddx = (txPx + ox) - midX;
-              const ddy = (tyPx + oy) - midY;
-              drawArrowHead(txPx + ox, tyPx + oy, ddx, ddy, true);
+              const ddx = endX - midX;
+              const ddy = endY - midY;
+              drawArrowHead(endX, endY, ddx, ddy, true);
               continue;
             }
             ctx.beginPath();
