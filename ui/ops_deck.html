@@ -1597,11 +1597,11 @@
               const offset = Math.max(14, gridSize * 0.4);
               ox = (-dy / len) * offset * sign;
               oy = (dx / len) * offset * sign;
-              const startX = cx;
-              const startY = cy;
+              const startX = cx + ox;
+              const startY = cy + oy;
               const endX = txPx + ox;
               const endY = tyPx + oy;
-              const arcOffset = Math.max(gridSize * 0.35, 12);
+              const arcOffset = Math.max(gridSize * 0.25, 10);
               const midX = (startX + endX) / 2;
               const midY = (startY + endY) / 2 - arcOffset;
               ctx.beginPath();
