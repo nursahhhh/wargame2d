@@ -203,6 +203,18 @@ class GridCombatEnv:
                     f"world=({grid.width}x{grid.height}), "
                     f"scenario=({scenario_obj.grid_width}x{scenario_obj.grid_height})"
                 )
+            
+            # Validate entity ID uniqueness
+            ids = [e.id for e in world_obj.get_all_entities()]
+            if len(ids) != len(set(ids)):
+                raise ValueError("Provided world contains duplicate entity IDs")
+
+            # Validate entity count matches scenario
+            if len(ids) != len(scenario_obj.entities):
+                raise ValueError(
+                    "Provided world entity count does not match scenario config: "
+                    f"world={len(ids)}, scenario={len(scenario_obj.entities)}"
+                )
 
             self.world = world_obj
         
