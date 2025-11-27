@@ -184,6 +184,8 @@ class Entity(ABC):
         Returns:
             Current radar range (0 if radar is inactive)
         """
+        if not self.alive:
+            return 0.0
         return self.radar_range
 
     def label(self) -> str:

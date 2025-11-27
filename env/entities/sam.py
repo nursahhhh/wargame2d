@@ -85,6 +85,8 @@ class SAM(Entity):
         Returns:
             Radar range if ON, 0.0 if OFF
         """
+        if not self.alive:
+            return 0.0
         return self.radar_range if self.on else 0.0
 
     def get_allowed_actions(self, world: WorldState) -> List[Action]:
