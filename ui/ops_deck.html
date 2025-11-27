@@ -1591,6 +1591,8 @@
             const key = actor.id < target.id ? `${actor.id}-${target.id}` : `${target.id}-${actor.id}`;
             const isReciprocal = pairCount[key] >= 2;
             let ox = 0, oy = 0, dx = txPx - cx, dy = tyPx - cy;
+            ctx.save();
+            ctx.setLineDash([8, 6]);
             if (isReciprocal) {
               const len = Math.hypot(dx, dy) || 1;
               const sign = actor.id < target.id ? 1 : -1;
@@ -1612,6 +1614,7 @@
               const ddx = endX - midX;
               const ddy = endY - midY;
               drawArrowHead(endX, endY, ddx, ddy, true);
+              ctx.restore();
               continue;
             }
             ctx.beginPath();
@@ -1619,6 +1622,7 @@
             ctx.lineTo(txPx + ox, tyPx + oy);
             ctx.stroke();
             drawArrowHead(txPx + ox, tyPx + oy, dx, dy, true);
+            ctx.restore();
           }
         }
       }
