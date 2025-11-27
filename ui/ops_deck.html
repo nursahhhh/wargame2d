@@ -1594,9 +1594,20 @@
             if (isReciprocal) {
               const len = Math.hypot(dx, dy) || 1;
               const sign = actor.id < target.id ? 1 : -1;
-              const offset = 8;
+              const offset = 12;
               ox = (-dy / len) * offset * sign;
               oy = (dx / len) * offset * sign;
+              const midX = (cx + txPx) / 2 + ox;
+              const midY = (cy + tyPx) / 2 + oy;
+              ctx.beginPath();
+              ctx.moveTo(cx + ox, cy + oy);
+              ctx.quadraticCurveTo(midX, midY, txPx + ox, tyPx + oy);
+              ctx.stroke();
+              // Use the curve's final direction for arrowhead
+              const ddx = (txPx + ox) - midX;
+              const ddy = (tyPx + oy) - midY;
+              drawArrowHead(txPx + ox, tyPx + oy, ddx, ddy, true);
+              continue;
             }
             ctx.beginPath();
             ctx.moveTo(cx + ox, cy + oy);
