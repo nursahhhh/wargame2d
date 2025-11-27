@@ -1533,7 +1533,7 @@
       const world = frame.world;
       const { gridSize, originX, originY } = helpers;
       const entities = getEntitiesForView(frame);
-      const radius = Math.max(20, Math.min(36, gridSize * 0.9));
+      const baseRadius = Math.max(20, Math.min(36, gridSize * 0.9));
 
       for (const entity of entities) {
         const pos = entity.position || entity.pos || [0, 0];
@@ -1543,6 +1543,13 @@
         const cx = px + gridSize / 2;
         const cy = py + gridSize / 2;
         const color = entity.team === "BLUE" ? "#79a6ff" : "#ff7b7b";
+        const isDead = entity.alive === false;
+        const glyphRadius = isDead ? Math.max(12, baseRadius * 0.6) : baseRadius;
+        const glyphColor = isDead
+          ? entity.team === "BLUE"
+            ? "rgba(121,166,255,0.45)"
+            : "rgba(255,123,123,0.45)"
+          : color;
 
         const kind = (entity.kind || "").toLowerCase();
         const radarOn = entity.radar_on === undefined ? true : !!entity.radar_on;
@@ -1551,16 +1558,20 @@
           drawRadar(cx, cy, gridSize, activeRadar, entity.team === "RED" ? "red" : "blue");
         }
 
-        if (kind === "awacs") glyphAwacs(cx, cy, radius, color);
+        ctx.save();
+        if (isDead) ctx.globalAlpha = 0.65;
+
+        if (kind === "awacs") glyphAwacs(cx, cy, glyphRadius, glyphColor);
         else if (kind === "sam") {
           const cooldownInfo = {
             remaining: entity.cooldown_remaining || 0,
             total: entity.cooldown_steps || entity.cooldown_remaining || 0,
           };
-          glyphSam(cx, cy, radius, color, radarOn, cooldownInfo);
+          glyphSam(cx, cy, glyphRadius, glyphColor, radarOn, cooldownInfo);
         }
-        else if (kind === "decoy") glyphDecoy(cx, cy, radius, color);
-        else glyphAircraft(cx, cy, radius, color);
+        else if (kind === "decoy") glyphDecoy(cx, cy, glyphRadius, glyphColor);
+        else glyphAircraft(cx, cy, glyphRadius, glyphColor);
+        ctx.restore();
 
         if (state.showIds) {
           ctx.fillStyle = "#f8fafc";
@@ -1578,10 +1589,10 @@
           ctx.strokeStyle = "rgba(255,255,255,0.6)";
           ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.moveTo(cx - radius * 0.5, cy - radius * 0.5);
-          ctx.lineTo(cx + radius * 0.5, cy + radius * 0.5);
-          ctx.moveTo(cx + radius * 0.5, cy - radius * 0.5);
-          ctx.lineTo(cx - radius * 0.5, cy + radius * 0.5);
+          ctx.moveTo(cx - glyphRadius * 0.5, cy - glyphRadius * 0.5);
+          ctx.lineTo(cx + glyphRadius * 0.5, cy + glyphRadius * 0.5);
+          ctx.moveTo(cx + glyphRadius * 0.5, cy - glyphRadius * 0.5);
+          ctx.lineTo(cx - glyphRadius * 0.5, cy + glyphRadius * 0.5);
           ctx.stroke();
         }
       }
