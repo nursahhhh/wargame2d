@@ -1,14 +1,19 @@
 """HTTP API entrypoint for driving the game from a web UI."""
 
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from env.scenario import Scenario
-from game_runner import GameRunner
+from runtime.runner import GameRunner
+from infra.paths import UI_ENTRYPOINT
 
 app = FastAPI()
 runner: GameRunner | None = None
+
 
 # Allow the browser-based control panel (served from file:// or other origins)
 app.add_middleware(
@@ -49,3 +54,11 @@ def status():
     if runner is None:
         return {"active": False}
     return {"active": True, "turn": runner.turn, "step": runner.step_count, "done": runner.done}
+
+
+@app.get("/", include_in_schema=False)
+def serve_ui():
+    """Serve the bundled control panel so the app runs from a single origin."""
+    if not UI_ENTRYPOINT.exists():
+        raise HTTPException(500, "UI entrypoint not found")
+    return FileResponse(UI_ENTRYPOINT)

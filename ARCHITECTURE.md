@@ -5,8 +5,9 @@ A short guide for new contributors; focus on where to start and how data flows.
 ## Top-Level Pieces
 - `env/`: Simulation engine (core types, entities, mechanics, `Scenario`, `GridCombatEnv`).
 - `agents/`: Built-in agent implementations plus the factory used by scenarios.
-- `game_frame.py`: Lightweight turn snapshot (`Frame`) with serialization helpers for the UI.
-- `game_runner.py`: Orchestrates a game. Loads a `Scenario`, wires up agents, steps the `GridCombatEnv`, and emits `Frame` objects.
+- `runtime/frame.py`: Lightweight turn snapshot (`Frame`) with serialization helpers for the UI.
+- `runtime/runner.py`: Orchestrates a game. Loads a `Scenario`, wires up agents, steps the `GridCombatEnv`, and emits `Frame` objects.
+- `infra/paths.py`: Shared filesystem locations (project root, storage, UI entrypoint) used by env and API layers.
 - `api/app.py`: FastAPI surface for the runner. Minimal stateful wrapper that exposes `/start`, `/step`, and `/status`.
 - `ui/ops_deck.html`: Static control panel that calls the API to drive and visualize a match.
 
@@ -16,7 +17,7 @@ A short guide for new contributors; focus on where to start and how data flows.
 3. The UI (`ui/ops_deck.html`) polls `/status` to show progress and hits `/step` to advance the game. It renders directly from the `Frame` payload.
 
 ## Game Runner at a Glance
-- Entry point for the simulation layer (`game_runner.py`).
+- Entry point for the simulation layer (`runtime/runner.py`).
 - Holds a `GridCombatEnv` instance and two prepared agents derived from the scenario.
 - `step()` merges both teams' actions, calls `env.step()`, and returns the pre-step world as a `Frame` so the UI can show fog-of-war correct views.
 - `run()` is a convenience loop for full episodes; `get_final_frame()` returns the terminal state without actions.

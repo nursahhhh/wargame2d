@@ -5,12 +5,12 @@ Provides type-safe Python definitions for scenarios and JSON serialization.
 """
 
 from __future__ import annotations
+from pathlib import Path
 from typing import Dict, List, Any, Optional, TYPE_CHECKING
 import json
-from pathlib import Path
 import time
 
-from paths import PROJECT_ROOT, SCENARIO_STORAGE_DIR
+from infra.paths import PROJECT_ROOT, SCENARIO_STORAGE_DIR
 from .entities.base import Entity
 from .entities import Aircraft, AWACS, SAM, Decoy
 from .core.types import Team

@@ -10,7 +10,10 @@ from env.mechanics.sensors import SensorSystem
 from env.scenario import Scenario
 from env.world import WorldState
 
-from game_frame import Frame
+from infra.logger import get_logger
+from .frame import Frame
+
+log = get_logger(__name__)
 
 
 class GameRunner:
@@ -38,6 +41,8 @@ class GameRunner:
         self._done = False
         self._last_info: StepInfo | None = None
         self._final_world: WorldState | None = None
+
+        log.info("GameRunner initialized for scenario seed=%s", self.scenario.seed)
 
     # ------------------------------------------------------------------#
     # Properties
