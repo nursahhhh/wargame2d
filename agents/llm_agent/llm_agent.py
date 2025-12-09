@@ -86,6 +86,7 @@ class LLMAgent(BaseAgent):
             intel=intel,
             allowed_actions=allowed_actions,
             config=self.prompt_config,
+            turn_number=world.turn,
         )
 
         commands = kwargs.get("commands") or ""
