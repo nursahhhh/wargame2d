@@ -1,18 +1,15 @@
+import json
 from typing import List, Literal, Optional
 
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent, ModelSettings, RunContext
 from pydantic import BaseModel, Field
 
 from agents.llm_agent.actors.game_deps import GameDeps
 from agents.llm_agent.prompts.tactics import TACTICAL_GUIDE
-
-
-ANALYST_TASK = (
-    "Provide a concise battlefield analysis for the commander. Cover: "
-    "1) threats to AWACS or exposed units and safe repositioning ideas, "
-    "2) high-value targets and feasible strikes this turn, "
-    "3) radar/visibility gaps plus missing contacts with last-seen details, "
-    "4) recommended team intent for the next turn. Keep it under 120 words."
+from agents.llm_agent.prompts.analyst import (
+    ANALYST_SYSTEM_PROMPT,
+    ANALYST_USER_PROMPT_TEMPLATE,
+    HISTORY_SECTION_TEMPLATE,
 )
 
 
@@ -83,41 +80,40 @@ class GameAnalysis(BaseModel):
     )
 
 analyst_agent = Agent(
-    "openai:gpt-5-mini",
+    "openrouter:qwen/qwen3-coder:exacto",
+    model_settings=ModelSettings(
+        temperature=0.6,
+        top_p=0.95,
+        max_tokens=32_000,
+        extra_body={
+            "top_k": 20,
+            "min_p": 0
+        }
+    ),
     deps_type=GameDeps,
     output_type=GameAnalysis,
-    instructions="You are an AI game analyst for your team in a grid-based air combat simulation."
+    instructions=ANALYST_SYSTEM_PROMPT,
 )
 
 @analyst_agent.instructions
 def full_prompt(ctx: RunContext[GameDeps]) -> str:
+    history_section = ""
+    if ctx.deps.step_info_list:
+        history_section = HISTORY_SECTION_TEMPLATE.format(
+            history_json=json.dumps(ctx.deps.step_info_list, default=str, indent=2)
+        )
 
-    return f"""
-### TASK
-{ANALYST_TASK}
+    game_info = {
+        "current_turn": ctx.deps.current_turn_number,
+        "multi_phase_strategy": ctx.deps.multi_phase_strategy,
+        "current_phase_strategy": ctx.deps.current_phase_strategy,
+        "entity_roles": ctx.deps.entity_roles,
+        "callback_conditions": ctx.deps.callback_conditions,
+    }
 
-### TACTICAL GUIDE (REFERENCE ONLY)
-{TACTICAL_GUIDE}
-
-### OUTPUT FORMAT
-Return JSON that matches the GameAnalysis schema:
-- unit_insights: ordered list of UnitInsight objects with key considerations and action analyses per unit.
-- critical_alerts: most urgent issues first, each prefixed with severity (e.g., HIGH/MEDIUM/LOW).
-- opportunities: actionable openings, prefixed with severity.
-- constraints: limiting factors or coordination risks that affect options.
-- spatial_status: brief posture and positioning narrative.
-- situation_summary: concise commander-ready summary tying alerts and intent together.
-- Actions must use this flat schema:
-  - type: MOVE | SHOOT | TOGGLE | WAIT (enum)
-  - MOVE fields: direction in [UP, DOWN, LEFT, RIGHT], optional destination {x,y}
-  - SHOOT fields: target is enemy unit id
-  - TOGGLE fields: on=true/false, only for SAM units (activates/deactivates radar/weapon system)
-  - WAIT fields: no additional fields
-  - Examples: {"type":"MOVE","direction":"UP","destination":{"x":10,"y":8}} | {"type":"SHOOT","target":3} | {"type":"TOGGLE","on":false} | {"type":"WAIT"}
-
-### GAME STATE 
-{ctx.deps.game_state}
-
-### RECENT STEPS
-{ctx.deps.step_info_list}
-"""
+    return ANALYST_USER_PROMPT_TEMPLATE.format(
+        game_state_json=json.dumps(ctx.deps.game_state, default=str, indent=2),
+        game_info=json.dumps(game_info, default=str, indent=2),
+        tactical_guide=TACTICAL_GUIDE,
+        history_section=history_section.strip(),
+    )
