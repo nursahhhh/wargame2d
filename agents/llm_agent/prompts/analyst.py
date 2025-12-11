@@ -80,7 +80,7 @@ Return ONLY valid JSON matching this exact structure:
       ]
     }
   ],
-  "spatial_status": "<single paragraph combining posture, formation, distance control>",
+  "spatial_status": "<single concise paragraph combining posture, formation, distance control>",
   "critical_alerts": [
     "PRIORITY: Description [units: X, Y]"
   ],
