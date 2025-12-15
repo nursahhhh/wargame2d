@@ -75,6 +75,9 @@ Use the GAME INFO and TACTICAL GUIDE as doctrine.
 - Roles: One-sentence objective per friendly unit id for this phase.
 - Callback conditions: List specific observable triggers. Keep each condition terse and clear.
 
+## RESPONSE FORMAT
+Always response with tool properly formatted tool call ('final_result') using the GamePlan schema.
+
 Stay concise, emphasize clarity, avoid jargon, and never output executable action commands.
 """
 

@@ -331,6 +331,9 @@ class PromptFormatter:
             "can_shoot": shoot_state["can_shoot_now"],
         }
 
+        if entity.kind == EntityKind.SAM:
+            capabilities["is_sam_on"] = bool(getattr(entity, "on", False))
+
         if missiles is not None:
             capabilities["missiles_remaining"] = missiles
         if weapon_range is not None:

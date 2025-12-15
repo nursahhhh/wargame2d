@@ -80,6 +80,9 @@ class LLMAgent(BaseAgent):
         metadata: Dict[str, Any] = {}
         allowed_actions: Dict[int, list[Action]] = {}
 
+        # Drop enemies that are known-dead from memory so they don't appear as "missing".
+        self._prune_dead_enemies(world)
+
         visible_enemy_ids = self._update_enemy_memory(intel, world.turn)
         missing_enemies = self._collect_missing_enemies(visible_enemy_ids, world.turn)
 
@@ -104,7 +107,7 @@ class LLMAgent(BaseAgent):
             # Keep only the most recent step info for watchdog decisions.
             self.game_deps.step_info_list = [step_info]
         initial_strategy = self.game_deps.current_turn_number == 0
-        actions, metadata = self._play_turn(state_dict, allowed_actions, initial_strategy)
+        actions, metadata = self._play_turn(state_dict, allowed_actions, initial_strategy, intel, world)
         self.game_deps.current_turn_number += 1
 
 
@@ -139,17 +142,19 @@ class LLMAgent(BaseAgent):
             state_dict: dict[str, Any],
             allowed_actions: Dict[int, list[Action]],
             initial_strategy: bool,
+            intel: TeamIntel,
+            world: WorldState,
     ):
-        # Analyse current state
-        last_step_info = self._format_last_step_info()
-        last_step_logs = ""
-        if last_step_info:
-            last_step_logs = json.dumps(last_step_info, default=str, indent=2, ensure_ascii=False)
+        # # Analyse current state
+        # last_step_info = self._format_last_step_info()
+        # last_step_logs = ""
+        # if last_step_info:
+        #     last_step_logs = json.dumps(last_step_info, default=str, indent=2, ensure_ascii=False)
 
         user_prompt = ANALYST_USER_PROMPT_TEMPLATE.format(
             game_info=GAME_INFO,
             game_state_json=json.dumps(state_dict, default=str, indent=2, ensure_ascii=False),
-            last_step_logs=last_step_logs,
+            last_step_logs=None,
         )
 
         analyst_res = analyst_agent.run_sync(user_prompt=user_prompt)
@@ -160,7 +165,7 @@ class LLMAgent(BaseAgent):
         state_for_watchdog = analysed_state_dict or state_dict
         callback_decision: Optional[CallbackAssessment] = None
         if self.game_deps.callback_conditions:
-            callback_decision = self._run_watchdog(state_for_watchdog)
+            callback_decision = self._run_watchdog(state_for_watchdog, intel, world)
 
         include_strategy = initial_strategy or (
             callback_decision is not None and callback_decision.needs_callback
@@ -171,7 +176,7 @@ class LLMAgent(BaseAgent):
         strategy_output = None
         if include_strategy:
             prompt_sections = [
-                "Use the current state below to issue a concise multi-phase plan."
+                "Use the current state below to issue a concise multi-phase plan. Respond back with final_result tool call with GamePlan schema only.",
             ]
 
             if callback_decision and callback_decision.needs_callback:
@@ -231,18 +236,21 @@ class LLMAgent(BaseAgent):
     def _run_watchdog(
             self,
             state_dict: dict[str, Any],
+            intel: TeamIntel,
+            world: WorldState,
     ) -> Optional[CallbackAssessment]:
         """Run the watchdog agent to see if strategist callbacks should trigger."""
         conditions = self._safe_model_dump(self.game_deps.callback_conditions) or []
+        last_step_summary = self._format_last_step_info(intel, world)
         prompt = (
             "Determine whether to trigger a strategist callback using the conditions and current state."
             f"\nCALLBACK CONDITIONS SET ON TURN: {self.game_deps.callback_conditions_set_turn}"
             f"\nCALLBACK CONDITIONS:\n{json.dumps(conditions, default=str, indent=2, ensure_ascii=False)}"
             f"\nCURRENT TURN: {self.game_deps.current_turn_number}"
+            "\n\nLAST STEP (visible-only summary):\n"
+            f"{json.dumps(last_step_summary, default=str, indent=2, ensure_ascii=False)}"
             "\n\nCURRENT STATE:\n"
             f"{json.dumps(state_dict, default=str, indent=2, ensure_ascii=False)}"
-            "\n\nLAST STEP LOGS (movement/combat/victory):\n"
-            f"{json.dumps(self._format_last_step_info(), default=str, indent=2, ensure_ascii=False)}"
         )
         watchdog_res = watchdog_agent.run_sync(user_prompt=prompt, deps=self.game_deps)
         return getattr(watchdog_res, "output", None)
@@ -259,15 +267,97 @@ class LLMAgent(BaseAgent):
         }
 
 
-    def _format_last_step_info(self) -> Optional[dict[str, Any]]:
-        """Return the most recent step_info as a serializable dict, if present."""
+    def _format_last_step_info(self, intel: TeamIntel, world: WorldState) -> Optional[dict[str, Any]]:
+        """
+        Return a visibility-filtered summary of the most recent step_info, if present.
+        Includes only our units and currently visible enemies to avoid information leaks.
+        """
         if not self.game_deps.step_info_list:
             return None
         last_step = self.game_deps.step_info_list[-1]
-        to_dict = getattr(last_step, "to_dict", None)
-        if callable(to_dict):
-            return to_dict()
-        return getattr(last_step, "__dict__", None) or {"raw": str(last_step)}
+        visible_ids = self._visible_entity_ids(intel)
+
+        movement_summary = self._summarize_movement(last_step.movement, visible_ids, world)
+        combat_summary = self._summarize_combat(last_step.combat, visible_ids, world)
+
+        summary: dict[str, Any] = {}
+        if movement_summary:
+            summary["movement"] = movement_summary
+        if combat_summary:
+            summary["combat"] = combat_summary
+        return summary or None
+
+    def _visible_entity_ids(self, intel: TeamIntel) -> Set[int]:
+        friendly_ids = {e.id for e in intel.friendlies}
+        visible_enemy_ids = {e.id for e in intel.visible_enemies}
+        return friendly_ids | visible_enemy_ids
+
+    def _summarize_movement(
+            self,
+            movement: Any,
+            visible_ids: Set[int],
+            world: WorldState,
+    ) -> Optional[dict[str, Any]]:
+        events: list[dict[str, Any]] = []
+        for result in getattr(movement, "movement_results", []) or []:
+            entity_id = getattr(result, "entity_id", None)
+            if entity_id is None or entity_id not in visible_ids:
+                continue
+            entity = world.get_entity(entity_id)
+            label = entity.label() if entity else f"id={entity_id}"
+            entry = {
+                "entity": label,
+                "entity_id": entity_id,
+                "from": {"x": result.old_pos[0], "y": result.old_pos[1]},
+                "to": {"x": result.new_pos[0], "y": result.new_pos[1]},
+                "status": "MOVED" if result.success else "BLOCKED",
+            }
+            if result.failure_reason:
+                entry["reason"] = result.failure_reason
+            events.append(entry)
+
+        return {"events": events} if events else None
+
+    def _summarize_combat(
+            self,
+            combat: Any,
+            visible_ids: Set[int],
+            world: WorldState,
+    ) -> Optional[dict[str, Any]]:
+        events: list[dict[str, Any]] = []
+        for result in getattr(combat, "combat_results", []) or []:
+            attacker_id = getattr(result, "attacker_id", None)
+            target_id = getattr(result, "target_id", None)
+            if attacker_id not in visible_ids and (target_id not in visible_ids):
+                continue
+
+            attacker = world.get_entity(attacker_id) if attacker_id is not None else None
+            target = world.get_entity(target_id) if target_id is not None else None
+            outcome = "HIT" if getattr(result, "hit", False) else "MISS"
+            events.append(
+                {
+                    "attacker": attacker.label() if attacker else f"id={attacker_id}",
+                    "attacker_id": attacker_id,
+                    "target": target.label() if target else f"id={target_id}",
+                    "target_id": target_id,
+                    "outcome": outcome if getattr(result, "success", False) else "FAILED",
+                    "target_killed": bool(getattr(result, "target_killed", False)),
+                }
+            )
+
+        visible_deaths = [
+            eid for eid in getattr(combat, "killed_entity_ids", []) or [] if eid in visible_ids
+        ]
+
+        if not events and not visible_deaths:
+            return None
+
+        summary: dict[str, Any] = {}
+        if events:
+            summary["events"] = events
+        if visible_deaths:
+            summary["death_ids"] = visible_deaths
+        return summary
 
 
     def _convert_entity_actions(
@@ -348,6 +438,20 @@ class LLMAgent(BaseAgent):
                 "last_seen_turn": turn,
             }
         return visible_ids
+
+    def _prune_dead_enemies(self, world: WorldState) -> None:
+        """
+        Remove enemies from memory if the world shows they are dead or gone.
+        Prevents dead enemies from being treated as "missing".
+        """
+        stale_ids = []
+        for enemy_id in self._enemy_memory:
+            entity = world.get_entity(enemy_id)
+            if entity is None or not entity.alive:
+                stale_ids.append(enemy_id)
+
+        for enemy_id in stale_ids:
+            self._enemy_memory.pop(enemy_id, None)
 
     def _collect_missing_enemies(self, visible_ids: Set[int], turn: int) -> List[Dict[str, Any]]:
         """

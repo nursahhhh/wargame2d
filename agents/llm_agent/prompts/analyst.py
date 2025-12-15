@@ -37,72 +37,23 @@ Format: "Brief tactical outcome of this specific action in short-term".
 Provide a concise paragraph on formation shape, posture, and distance control (who can force/avoid engagement and why).
 
 ### STEP 3: TEAM-LEVEL SYNTHESIS
-
-**A. Critical Alerts** (prioritized list of strings):
+**A. Critical Alerts (if any)** (prioritized list of strings):
 Identify immediate threats requiring response:
-- CRITICAL: AWACS in danger, imminent destruction
-- HIGH: Armed units threatened, high-value targets exposed
-- MEDIUM: Positioning issues, moderate risks
 Format: "PRIORITY: Description [units: X, Y, Z]".
 
-**B. Opportunities** (prioritized list of strings):
+**B. Opportunities (if any)** (prioritized list of strings):
 Identify tactical advantages to exploit:
-- HIGH: Can damage/kill enemy AWACS or critical targets
-- MEDIUM: Favorable engagement opportunities
-- LOW: Minor tactical advantages
 Format: "PRIORITY: Description [units: X, Y, Z]".
 
-**C. Constraints** (categorized list of strings):
+**C. Constraints (if any)** (categorized list of strings):
 Identify factors limiting options:
-- Type: RESOURCE (ammo, cooldowns) / POSITIONING (trapped, edge-limited) / INFORMATION (unknown threats)
-- Severity: HIGH / MEDIUM / LOW
 Format: "SEVERITY - TYPE: Description [affects: unit_ids or TEAM]".
 
 ### STEP 4: SITUATION SUMMARY (1-2 sentences)
 High-level snapshot of current tactical state.
 
-## OUTPUT FORMAT
-Return ONLY JSON matching this exact structure:
-{{
-  "unit_insights": [
-    {{
-      "unit_id": <int>,
-      "role": "<concise tactical role/status>",
-      "key_considerations": [
-        "<critical fact 1>",
-        "<critical fact 2>"
-      ],
-      "action_analysis": [
-        {{
-          "action": <exact action object from game state>,
-          "implication": "<tactical implication of this action>"
-        }}
-      ]
-    }}
-  ],
-  "spatial_status": "<single concise paragraph combining posture, formation, distance control>",
-  "critical_alerts": [
-    "PRIORITY: Description [units: X, Y]"
-  ],
-  "opportunities": [
-    "PRIORITY: Description [units: X, Y]"
-  ],
-  "constraints": [
-    "SEVERITY - TYPE: Description [affects: X, Y or TEAM]"
-  ],
-  "situation_summary": "<1-2 sentence overview>"
-}}
-
-## ACTION SCHEMA (must match exactly)
-- type: enum MOVE | SHOOT | TOGGLE | WAIT
-- MOVE fields: direction in [UP, DOWN, LEFT, RIGHT], optional destination {{x,y}}
-- SHOOT fields: target is enemy unit id
-- TOGGLE fields: on=true/false, only for SAM units (activates/deactivates radar/weapon system)
-- WAIT fields: no additional fields
-- Examples: {{"type":"MOVE","direction":"UP","destination":{{"x":10,"y":8}}}} | {{"type":"SHOOT","target":3}} | {{"type":"TOGGLE","on":false}} | {{"type":"WAIT"}} 
-
 ## CRITICAL RULES
-1. Output ONLY valid JSON, no additional text.
+1. Response with properly formatted tool call.
 2. Every alive ally unit in game state must have a unit_insights entry.
 3. Every action in a unit's action list must have an action_analysis entry.
 4. Do NOT suggest strategies or choose actions; only analyze and describe short-term implications.
@@ -110,14 +61,15 @@ Return ONLY JSON matching this exact structure:
 6. Prioritize alerts/opportunities (most important first).
 7. Be concise—focus on actionable intelligence.
 8. Use game state data (hit probabilities, distances) when available—do not invent numbers.
-9. If an action is impossible due to blocking (now or next turn), note it as BLOCKED and why in the implication.
-10. Coordinate system is absolute for BOTH teams: +x=RIGHT, -x=LEFT, +y=UP, -y=DOWN (origin bottom-left). Do NOT flip axes by team.
-11. Forward/advance = move toward enemy base/center; backward/retreat = move toward own base/center. Defaults: RED spawn_side=RIGHT so forward=LEFT, backward=RIGHT; BLUE spawn_side=LEFT so forward=RIGHT, backward=LEFT. Use team_orientation metadata to confirm; if orientation is unknown, fall back to these defaults.
-12. For every MOVE implication, restate direction in absolute terms and relative intent (e.g., "absolute: LEFT (dx=-1,dy=0); relative: retreat").
-13. If a move's absolute direction conflicts with the stated intent (e.g., retreat but moving toward the enemy), call it out explicitly as DIRECTION_MISMATCH.
+9. Coordinate system is absolute for BOTH teams: +x=RIGHT, -x=LEFT, +y=UP, -y=DOWN (origin bottom-left). Do NOT flip axes by team.
+10. Forward/advance = move toward enemy base/center; backward/retreat = move toward own base/center. 
 
 ## GAME INFO FOR YOU TO UNDERSTAND THE GAME CHARACTERISTICS & DYNAMICS
 {GAME_INFO}
+
+
+## RESPONSE FORMAT
+You MUST response with a TOOL CALL "final_result" complying with this tool's schema.
 """
 
 
@@ -127,8 +79,5 @@ Analyze the following game state and provide tactical intelligence.
 ## CURRENT GAME STATE
 {game_state_json}
 
-## LAST STEP LOGS (movement/combat, if provided)
-{last_step_logs}
-
-Think first then provide your analysis in the specified JSON format.
+Think first then provide your analysis as a TOOL CALL "final_result" complying with the tool's schema.
 """
