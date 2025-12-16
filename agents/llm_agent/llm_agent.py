@@ -55,6 +55,9 @@ class LLMAgent(BaseAgent):
         self.prompt_config = PromptConfig()
         # Track last-seen info for enemies that drop out of visibility.
         self._enemy_memory: Dict[int, Dict[str, Any]] = {}
+        # Track confirmed casualties with turn metadata.
+        self._casualties: Dict[str, list[Dict[str, Any]]] = {"friendly": [], "enemy": []}
+        self._recorded_kill_ids: set[int] = set()
 
         self.game_deps = GameDeps()
 
@@ -85,6 +88,7 @@ class LLMAgent(BaseAgent):
 
         visible_enemy_ids = self._update_enemy_memory(intel, world.turn)
         missing_enemies = self._collect_missing_enemies(visible_enemy_ids, world.turn)
+        self._update_casualties(step_info, world)
 
         for entity in intel.friendlies:
             if not entity.alive:
@@ -100,6 +104,7 @@ class LLMAgent(BaseAgent):
             config=self.prompt_config,
             turn_number=world.turn,
             missing_enemies=missing_enemies,
+            casualties=self._casualties,
         )
 
         self.game_deps.current_state_dict = state_dict
@@ -470,6 +475,39 @@ class LLMAgent(BaseAgent):
                 }
             )
         return missing
+
+    def _update_casualties(self, step_info: Optional["StepInfo"], world: WorldState) -> None:
+        """
+        Capture confirmed kills from the previous turn using StepInfo and store
+        them with turn metadata for prompt formatting.
+        """
+        if step_info is None:
+            return
+
+        combat = getattr(step_info, "combat", None)
+        killed_ids = getattr(combat, "killed_entity_ids", []) if combat is not None else []
+        if not killed_ids:
+            return
+
+        killed_on_turn = max(world.turn - 1, 0)
+        for entity_id in killed_ids:
+            if entity_id in self._recorded_kill_ids:
+                continue
+            entity = world.get_entity(entity_id)
+            if entity is None:
+                continue
+            entry = {
+                "unit_id": entity.id,
+                "team": entity.team.name if hasattr(entity.team, "name") else str(entity.team),
+                "type": entity.kind.name if hasattr(entity.kind, "name") else str(entity.kind),
+                "last_position": {"x": entity.pos[0], "y": entity.pos[1]},
+                "killed_on_turn": killed_on_turn,
+            }
+            if entity.team == self.team:
+                self._casualties["friendly"].append(entry)
+            else:
+                self._casualties["enemy"].append(entry)
+            self._recorded_kill_ids.add(entity_id)
 
     def _merge_analysis(self, state_dict: dict[str, Any], analysis: GameAnalysis) -> dict[str, Any]:
         """

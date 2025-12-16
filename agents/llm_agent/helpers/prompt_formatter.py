@@ -109,6 +109,7 @@ class PromptFormatter:
         turn_number: int = 0,
         team_name: Optional[str] = None,
         missing_enemies: Optional[List[Dict[str, Any]]] = None,
+        casualties: Optional[Dict[str, List[Dict[str, Any]]]] = None,
     ) -> Dict[str, Any]:
         """
         Build the JSON prompt and return both the string and the underlying dict.
@@ -120,7 +121,9 @@ class PromptFormatter:
 
         missing_enemies = missing_enemies or []
 
-        situation = self._build_situation(intel, friendly_positions, enemy_positions, cfg, missing_enemies)
+        situation = self._build_situation(
+            intel, friendly_positions, enemy_positions, cfg, missing_enemies, casualties
+        )
         # Add far-away enemies not covered by per-unit threat listings.
         situation["distant_enemies"] = self._get_distant_enemies(intel, friendly_positions, cfg)
         situation["missing_enemies"] = missing_enemies
@@ -132,7 +135,7 @@ class PromptFormatter:
         }
 
         if cfg.include_casualties:
-            payload["casualties"] = self._get_casualties(intel)
+            payload["casualties"] = self._get_casualties(intel, casualties)
 
         grouped_map = self._enemy_group_map(intel.visible_enemies, intel, cfg.grouping_radius)
 
@@ -248,6 +251,7 @@ class PromptFormatter:
         enemy_positions: List[Tuple[int, int]],
         cfg: PromptConfig,
         missing_enemies: List[Dict[str, Any]],
+        casualties: Optional[Dict[str, List[Dict[str, Any]]]],
     ) -> Dict[str, Any]:
         ally_center = self._calculate_center_of_mass(friendly_positions)
         enemy_center = self._calculate_center_of_mass(enemy_positions)
@@ -269,6 +273,7 @@ class PromptFormatter:
             }
 
         friendly_losses = self._summarize_losses(intel.friendlies)
+        enemy_killed_units = len(casualties.get("enemy", [])) if casualties else None
 
         return {
             "friendly_forces": {
@@ -280,7 +285,7 @@ class PromptFormatter:
             "enemy_forces": {
                 "visible_now": len(intel.visible_enemies),
                 "visible_shooters": sum(1 for e in intel.visible_enemies if e.has_fired_before),
-                "killed_units": None,  # Enemy casualties are not tracked in TeamIntel
+                "killed_units": enemy_killed_units,
                 "missing_contacts": len(missing_enemies),
             },
             "spatial_analysis": {
@@ -552,7 +557,17 @@ class PromptFormatter:
     # ------------------------------------------------------------------ #
     # Casualties + helpers
     # ------------------------------------------------------------------ #
-    def _get_casualties(self, intel: TeamIntel) -> Dict[str, Any]:
+    def _get_casualties(
+        self,
+        intel: TeamIntel,
+        casualties: Optional[Dict[str, List[Dict[str, Any]]]] = None,
+    ) -> Dict[str, Any]:
+        if casualties is not None:
+            return {
+                "friendly": list(casualties.get("friendly", [])),
+                "enemy": list(casualties.get("enemy", [])),
+            }
+
         friendly = []
         for entity in intel.friendlies:
             if entity.alive:
