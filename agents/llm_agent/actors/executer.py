@@ -70,14 +70,7 @@ class TeamAction(BaseModel):
 # --- System prompt template ---
 EXECUTER_SYSTEM_PROMPT = f"""
 You are the Execution Commander. Your purpose is to convert the strategist's current plan into concrete actions for each friendly unit this turn.
-
-Game rules are provided below. Your job is to pick the best action for each unit considering the current game state, considering the strategist's phase objective and each unit's assigned role.
-
-## GAME RULES
-{GAME_INFO}
-
-Output the TeamAction schema only. Avoid narration outside the schema.
-"""
+Your job is to pick the best action for each unit considering the current game state, the strategist's current phase objective and each unit's assigned role."""
 
 
 # --- Agent definition ---
@@ -104,25 +97,29 @@ player = Agent(
 def execution_instructions(ctx: RunContext[GameDeps]) -> str:
     deps = ctx.deps or GameDeps()
 
-    strategy_section = "## CURRENT STRATEGY\n"
-    if deps.current_phase_strategy:
-        strategy_section += (
-            f"Current phase:\n{json.dumps(deps.current_phase_strategy, indent=2, ensure_ascii=False)}\n"
-        )
-
-    roles_section = "## ROLES\n"
-    if deps.entity_roles:
-        roles_section += "\n".join(
-            f"- Unit {unit_id}: {role}" for unit_id, role in deps.entity_roles.items()
-        ) + "\n"
-    else:
-        roles_section += "- No explicit roles provided.\n"
-
-
-    return "\n".join(
-        [
-            EXECUTER_SYSTEM_PROMPT,
-            strategy_section,
-            roles_section,
-        ]
+    strategy_json = (
+        json.dumps(deps.current_phase_strategy, indent=2, ensure_ascii=False)
+        if deps.current_phase_strategy
+        else "No current phase strategy."
     )
+
+    roles = (
+        "\n".join(f"- Unit {unit_id}: {role}" for unit_id, role in deps.entity_roles.items())
+        if deps.entity_roles
+        else "- No explicit roles provided."
+    )
+
+    return f"""
+## CURRENT STRATEGY
+{strategy_json}
+
+### ROLES THIS PHASE
+{roles}
+
+Game rules are provided below. 
+## GAME RULES
+{GAME_INFO}
+
+## RESPONSE FORMAT
+Output the TeamAction schema only. Avoid narration outside the schema.
+"""

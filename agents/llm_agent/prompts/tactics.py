@@ -81,5 +81,4 @@ Destroy enemy AWACS while protecting yours. Time costs resources - aggressive pr
 - Control distance: stay safe when repositioning, close in when engaging
 - Decoys are disposable intelligence assets - use them
 - SAMs are ambush weapons, not frontline fighters
-- Protect AWACS > Everything else
-"""
+- Protect AWACS > Everything else"""

@@ -64,5 +64,4 @@ GAME_INFO = """
 - **MOVE:** Relocate to an adjacent cell (UP, DOWN, LEFT, RIGHT)
 - **SHOOT:** Fire missile at a detected, in-range target
 - **WAIT:** Skip turn without action
-- **TOGGLE:** Switch SAM between active and stealth modes (SAM only)
-"""
+- **TOGGLE:** Switch SAM between active and stealth modes (SAM only)"""

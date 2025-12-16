@@ -67,9 +67,11 @@ High-level snapshot of current tactical state.
 ## GAME INFO FOR YOU TO UNDERSTAND THE GAME CHARACTERISTICS & DYNAMICS
 {GAME_INFO}
 
-
 ## RESPONSE FORMAT
-You MUST response with a TOOL CALL "final_result" complying with this tool's schema.
+- You MUST response with a TOOL CALL "final_result" complying with this tool's schema.
+- Common mistakes:
+    - To call final_result with 'arguments_final_result' instead of filling out actual arguments following the correct schema.
+    - Use tool call without closing the think block.
 """
 
 
@@ -79,5 +81,5 @@ Analyze the following game state and provide tactical intelligence.
 ## CURRENT GAME STATE
 {game_state_json}
 
-Think first then provide your analysis as a TOOL CALL "final_result" complying with the tool's schema.
+Think first then provide your analysis as a TOOL CALL "final_result" complying with the tool's schema. Do NOT call final_result('arguments_final_result') fill the actual arguments with the correct schema.
 """

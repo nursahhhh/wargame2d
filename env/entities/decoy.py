@@ -38,7 +38,7 @@ class Decoy(Entity):
     kind: EntityKind = EntityKind.DECOY
     can_move: bool = True
     can_shoot: bool = False
-    radar_range: float = 0.0  # Decoys have no radar
+    radar_range: float = 2.0  # Decoys have no radar
 
     def get_allowed_actions(self, world: WorldState) -> List[Action]:
         """
