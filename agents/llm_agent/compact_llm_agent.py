@@ -109,7 +109,7 @@ class LLMCompactAgent(BaseAgent):
             strategy_plan, strategy_error, _ = self._restrategize()
             analyst_output, analyst_error = self._run_analyst()
 
-        # 4) Executor: call compact executor; still fall back to safe actions if mapping fails.
+        # 4) Executor: call compact executor and map its actions.
         exec_result = self._run_executor(allowed_actions)
         actions.update(exec_result.get("actions", {}))
 
@@ -195,27 +195,62 @@ class LLMCompactAgent(BaseAgent):
         allowed_actions: Dict[int, List[Action]],
     ) -> Dict[str, Any]:
         """
-        Run the compact executor to propose actions; default to safe fallbacks for now.
+        Run the compact executor to propose actions and map them to env actions.
         """
-        fallback_actions: Dict[int, Action] = {
-            entity_id: self._pick_fallback_action(allowed) for entity_id, allowed in allowed_actions.items()
-        }
-
         try:
             result: AgentRunResult[TeamTurnPlan] = executer_compact_agent.run_sync(
                 user_prompt="Propose the actions for this turn.", deps=self.game_deps
             )
-            return {
-                "actions": fallback_actions,  # placeholder until we map to env actions
-                "plan": result.output,
-                "error": None,
-            }
+            mapped = self._map_team_plan_to_actions(result.output, allowed_actions)
+            return {"actions": mapped, "plan": result.output, "error": None}
         except Exception as exc:
             return {
-                "actions": fallback_actions,
+                "actions": {},
                 "plan": None,
                 "error": str(exc),
             }
+
+    def _map_team_plan_to_actions(
+        self,
+        plan: TeamTurnPlan,
+        allowed_actions: Dict[int, List[Action]],
+    ) -> Dict[int, Action]:
+        """
+        Map TeamTurnPlan into environment Action objects, falling back to WAIT if invalid.
+        """
+        mapped: Dict[int, Action] = {}
+        for entity_action in plan.entity_actions:
+            entity_id = getattr(entity_action.action, "entity_id", None)
+            if entity_id is None:
+                continue
+            allowed = allowed_actions.get(entity_id, [])
+            env_action = self._first_matching_action(entity_action.action, allowed)
+            if env_action:
+                mapped[entity_id] = env_action
+            elif allowed:
+                mapped[entity_id] = self._pick_fallback_action(allowed)
+        return mapped
+
+    @staticmethod
+    def _first_matching_action(llm_action: Any, allowed: List[Action]) -> Optional[Action]:
+        """
+        Try to find an environment action matching the LLM-described action.
+        """
+        for candidate in allowed:
+            if llm_action.type != candidate.type.value and llm_action.type != candidate.type.name:
+                continue
+            if candidate.type == ActionType.WAIT:
+                return candidate
+            if candidate.type == ActionType.MOVE and hasattr(llm_action, "direction"):
+                if llm_action.direction == getattr(candidate, "direction", None):
+                    return candidate
+            if candidate.type == ActionType.SHOOT and hasattr(llm_action, "target_id"):
+                if llm_action.target_id == getattr(candidate, "target_id", None):
+                    return candidate
+            if candidate.type == ActionType.TOGGLE and hasattr(llm_action, "on"):
+                if bool(llm_action.on) == getattr(candidate, "on", None):
+                    return candidate
+        return None
 
     def _update_enemy_memory(self, intel: TeamIntel, turn: int) -> Set[int]:
         visible_ids: Set[int] = set()
