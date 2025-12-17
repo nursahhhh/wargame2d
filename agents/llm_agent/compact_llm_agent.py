@@ -147,15 +147,7 @@ class LLMCompactAgent(BaseAgent):
             result: AgentRunResult[AnalystCompactOutput] = analyst_compact_agent.run_sync(
                 user_prompt="Provide the analyst view for this turn.", deps=self.game_deps
             )
-            self.game_deps.analyst_history.append(result.output)
-            if result.output.key_facts:
-                turn_facts = self.game_deps.analyst_key_facts.setdefault(
-                    self.game_deps.current_turn_number, []
-                )
-                for fact in result.output.key_facts:
-                    if fact and fact not in turn_facts:
-                        turn_facts.append(fact)
-            self.game_deps.analyst_last_analysis = result.output.analysis
+            self.game_deps.analyst_history[self.game_deps.current_turn_number] = result.output
             return result.output, None
         except Exception as exc:
             return (

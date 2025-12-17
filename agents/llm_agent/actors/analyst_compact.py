@@ -45,15 +45,18 @@ class AnalystCompactOutput(BaseModel):
     )
 
 
-def _format_key_facts(facts_by_turn: Dict[int, List[str]]) -> str:
-    if not facts_by_turn:
+def _format_key_facts(analyst_history: Dict[int, "AnalystCompactOutput"]) -> str:
+    if not analyst_history:
         return "- None recorded yet."
     lines: List[str] = []
-    for turn in sorted(facts_by_turn.keys()):
+    for turn in sorted(analyst_history.keys()):
+        key_facts = analyst_history[turn].key_facts or []
+        if not key_facts:
+            continue
         lines.append(f"Turn {turn}:")
-        for fact in facts_by_turn[turn]:
+        for fact in key_facts:
             lines.append(f"  - {fact}")
-    return "\n".join(lines)
+    return "\n".join(lines) if lines else "- None recorded yet."
 
 
 def _describe_movement(entry: Dict[str, Any]) -> str:
@@ -170,14 +173,16 @@ def full_prompt(ctx: RunContext[GameDeps]) -> str:
         if getattr(deps, "strategy_plan", None)
         else "No strategy provided yet."
     )
-    key_facts = _format_key_facts(getattr(deps, "analyst_key_facts", {}))
+    history = getattr(deps, "analyst_history", {}) or {}
+    key_facts = _format_key_facts(history)
     step_logs = _format_step_logs(
         getattr(deps, "visible_history", {}),
         getattr(deps, "max_history_turns", 5),
         getattr(deps, "current_turn_number", 0),
         getattr(deps, "team_name", None),
     )
-    previous_analysis = getattr(deps, "analyst_last_analysis", None) or "None yet."
+    prev_turns = [t for t in history.keys() if t < getattr(deps, "current_turn_number", 0)]
+    previous_analysis = history[max(prev_turns)].analysis if prev_turns else "None yet."
     current_state = deps.current_state or "No current state available."
 
     return f"""

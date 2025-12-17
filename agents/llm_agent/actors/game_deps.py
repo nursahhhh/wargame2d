@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, Any, TYPE_CHECKING, Dict, List
+from typing import Optional, Any, TYPE_CHECKING, Dict
 
 
 if TYPE_CHECKING:
@@ -19,9 +19,7 @@ class GameDeps:
     current_state: Optional[str] = None
     current_state_dict: Optional[dict[str, Any]] = None
 
-    analyst_key_facts: Dict[int, List[str]] = field(default_factory=dict)
-    analyst_last_analysis: Optional[str] = None
-    analyst_history: List["AnalystCompactOutput"] = field(default_factory=list)
+    analyst_history: Dict[int, "AnalystCompactOutput"] = field(default_factory=dict)
     visible_history: Dict[int, Dict[str, Any]] = field(default_factory=dict)
     max_history_turns: int = 5
 
