@@ -14,6 +14,7 @@ class GameDeps:
     team_name: Optional[str] = None
     current_turn_number: int = 0
     strategy_plan: Optional[StrategyOutput] = None
+    strategy_set_turn: Optional[int] = None
     just_replanned: bool = False
     last_strategized_turn: Optional[int] = None
 

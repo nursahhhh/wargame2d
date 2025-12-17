@@ -1,4 +1,5 @@
 import random
+import json
 from typing import Dict, Any, Optional, TYPE_CHECKING, List, Set
 
 from pydantic_ai import AgentRunResult
@@ -145,6 +146,25 @@ class LLMCompactAgent(BaseAgent):
         print("\n" + "=" * 80 + "\n")
         return actions, metadata
 
+    def _maybe_get_initial_strategy(self) -> Optional[str]:
+        """
+        Fetch the initial strategy on the first turn if not already cached.
+        """
+        if self.game_deps.strategy_plan is not None or self.game_deps.current_turn_number != 0:
+            return None
+
+        try:
+            user_prompt = self._build_strategy_user_prompt(is_replan=False, replan_reason=None)
+            result: AgentRunResult[StrategyOutput] = strategist_compact_agent.run_sync(
+                user_prompt=user_prompt, deps=self.game_deps
+            )
+            self.game_deps.strategy_plan = result.output
+            self.game_deps.just_replanned = True
+            self.game_deps.strategy_set_turn = self.game_deps.current_turn_number
+            return None
+        except Exception as exc:
+            return str(exc)
+
 
     def _run_analyst(self, store: bool = True) -> tuple[Optional[AnalystCompactOutput], Optional[str]]:
         """
@@ -169,24 +189,7 @@ class LLMCompactAgent(BaseAgent):
         """
         self.game_deps.analyst_history[self.game_deps.current_turn_number] = output
 
-    def _maybe_get_initial_strategy(self) -> Optional[str]:
-        """
-        Fetch the initial strategy on the first turn if not already cached.
-        """
-        if self.game_deps.strategy_plan is not None or self.game_deps.current_turn_number != 0:
-            return None
 
-        try:
-            user_prompt = self._build_strategy_user_prompt(is_replan=False, replan_reason=None)
-            result: AgentRunResult[StrategyOutput] = strategist_compact_agent.run_sync(
-                user_prompt=user_prompt, deps=self.game_deps
-            )
-            self.game_deps.strategy_plan = result.output
-            self.game_deps.just_replanned = True
-            self.game_deps.last_strategized_turn = self.game_deps.current_turn_number
-            return None
-        except Exception as exc:
-            return str(exc)
 
     def _restrategize(
         self,
@@ -207,7 +210,7 @@ class LLMCompactAgent(BaseAgent):
             )
             self.game_deps.strategy_plan = result.output
             self.game_deps.just_replanned = True
-            self.game_deps.last_strategized_turn = self.game_deps.current_turn_number
+            self.game_deps.strategy_set_turn = self.game_deps.current_turn_number
             return result.output, None, True
         except Exception as exc:
             return None, str(exc), False
@@ -243,46 +246,53 @@ class LLMCompactAgent(BaseAgent):
         """
         deps = self.game_deps
         current_state = deps.current_state or "No current state available."
-        last_strategy_turn = (
-            f"{deps.last_strategized_turn}"
-            if deps.last_strategized_turn is not None
-            else "No previous strategy recorded."
-        )
+
+        if not is_replan:
+            return (
+                "Analyse the game state carefully and come up with winning strategy for the team.\n"
+                f"{current_state}"
+            )
+
+        last_strategy_turn = deps.strategy_set_turn
         last_strategy_text = (
-            deps.strategy_plan.to_text(include_analysis=True, include_callbacks=True)
+            deps.strategy_plan.to_text(include_analysis=False, include_callbacks=True)
             if deps.strategy_plan
             else "No previous strategy recorded."
         )
-        callback_text = ""
-        if deps.strategy_plan:
-            callback_text = "\n".join(f"- {c}" for c in deps.strategy_plan.call_me_back_if) or "None provided."
-        else:
-            callback_text = "None provided."
+        callback_text = (
+            "\n".join(f"- {c}" for c in deps.strategy_plan.call_me_back_if)
+            if deps.strategy_plan and deps.strategy_plan.call_me_back_if
+            else "None provided."
+        )
 
         since_last_notes = self._summarize_key_facts_since_last_strategy()
+        recent_events = self._summarize_events_since_last_strategy()
         last_analysis = self._latest_analysis(latest_analyst=latest_analyst)
 
-        purpose = "RE-STRATEGIZING requested by analyst." if is_replan else "Initial strategy request."
         reason = replan_reason.strip() if replan_reason else "Not specified."
+        last_turn_label = last_strategy_turn if last_strategy_turn is not None else "Unknown"
 
         return (
-            f"Purpose: {purpose}\n"
-            f"- Last strategized turn: {last_strategy_turn}\n"
-            f"- Replan trigger reason: {reason}\n"
+            f"# PURPOSE\n"
+            f"Re-strategize because: {reason}\n"
+            f"Last strategized on turn: {last_turn_label}\n"
             "\n"
-            "Last strategy (for context):\n"
+            "# LAST STRATEGY\n"
             f"{last_strategy_text}\n"
             "\n"
-            "Callback conditions you gave last time:\n"
+            "# CALLBACK CONDITIONS\n"
             f"{callback_text}\n"
             "\n"
-            "Since last strategy (analyst key facts):\n"
+            "# WHAT HAPPENED SINCE LAST STRATEGY\n"
             f"{since_last_notes}\n"
             "\n"
-            "Latest analyst analysis:\n"
+            "# OBSERVED EVENTS SINCE LAST STRATEGY\n"
+            f"{recent_events}\n"
+            "\n"
+            "# LATEST ANALYSIS\n"
             f"{last_analysis}\n"
             "\n"
-            "Current state:\n"
+            "# CURRENT STATE\n"
             f"{current_state}\n"
         )
 
@@ -294,7 +304,7 @@ class LLMCompactAgent(BaseAgent):
         if not history:
             return "- No analyst key facts recorded."
 
-        start_turn = (self.game_deps.last_strategized_turn or -1) + 1
+        start_turn = (self.game_deps.strategy_set_turn or -1) + 1
         turns = [t for t in history.keys() if t >= start_turn and t < self.game_deps.current_turn_number]
         if not turns:
             return "- No new key facts since last strategy."
@@ -322,6 +332,28 @@ class LLMCompactAgent(BaseAgent):
 
         last_turn = max(history.keys())
         return f"Turn {last_turn}:\n{history[last_turn].analysis}"
+
+    def _summarize_events_since_last_strategy(self) -> str:
+        """
+        Summarize observed step logs since the last strategy turn.
+        """
+        history = self.game_deps.visible_history or {}
+        if not history:
+            return "- No observed events recorded."
+
+        start_turn = (self.game_deps.strategy_set_turn or -1) + 1
+        turns = [t for t in history.keys() if t >= start_turn and t < self.game_deps.current_turn_number]
+        if not turns:
+            return "- No observed events since last strategy."
+
+        lines: List[str] = []
+        for turn in sorted(turns):
+            try:
+                summary = json.dumps(history[turn], ensure_ascii=False, indent=2)
+            except Exception:
+                summary = str(history[turn])
+            lines.append(f"- Turn {turn}:\n{summary}")
+        return "\n".join(lines)
 
     def _map_team_plan_to_actions(
         self,
