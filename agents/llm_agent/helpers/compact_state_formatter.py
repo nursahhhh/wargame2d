@@ -150,42 +150,33 @@ class CompactStateFormatter:
         )
 
         lines: List[str] = []
-        lines.append("=" * 72)
-        lines.append(f"TACTICAL STATE SNAPSHOT - TEAM {state['team']} (TURN {state['turn_summary']['turn']})")
-        lines.append("=" * 72)
+        lines.append(f"### Tactical State Snapshot - Team {state['team']} (Turn {state['turn_summary']['turn']})")
+        lines.append("")
         # Battlefield / coordinates / orientation
-        lines.append("BATTLEFIELD & COORDINATES")
-        lines.append("-" * 72)
+        lines.append("#### Battlefield & Coordinates")
         lines.append(
-            f"- Map: {state['battlefield']['width']}x{state['battlefield']['height']} "
+            f"- **Map:** {state['battlefield']['width']}x{state['battlefield']['height']} "
             f"(center=({state['battlefield']['center']['x']}, {state['battlefield']['center']['y']}))"
         )
-        lines.append("- Coordinate system:")
+        lines.append("- **Coordinate system:**")
         lines.extend([f"  {line}" for line in self._coordinate_system_lines()])
         if self.config.include_orientation_metadata:
-            lines.append("- Team orientation:")
+            lines.append("- **Team orientation:**")
             lines.extend([f"  {line}" for line in self._orientation_lines(team)])
         lines.append("")
 
-        summary = state["turn_summary"]
         forces = self._forces_snapshot(intel, state["enemy_units"], state.get("dead_entities"))
-        lines.append("SITUATION SUMMARY")
-        lines.append("-" * 72)
+        lines.append("#### Situation Summary")
         lines.append(
-            f"- Friendly: alive={summary['friendlies_alive']}, visible_enemies={summary['visible_enemies']}, "
-            f"missing_enemies={summary['missing_enemies']}"
+            f"- **Friendly forces:** alive={forces['friendly_alive']}, armed={forces['friendly_armed']}, mobile={forces['friendly_mobile']}, lost={forces['friendly_lost'] or 'none'}"
         )
         lines.append(
-            f"- Friendly forces: alive={forces['friendly_alive']}, armed={forces['friendly_armed']}, mobile={forces['friendly_mobile']}, lost={forces['friendly_lost'] or 'none'}"
-        )
-        lines.append(
-            f"- Enemy forces: visible_now={forces['enemy_visible']}, visible_shooters={forces['enemy_visible_shooters']}, killed={forces['enemy_killed'] or 'none'}"
+            f"- **Enemy forces:** visible_now={forces['enemy_visible']}, visible_shooters={forces['enemy_visible_shooters']}, killed={forces['enemy_killed'] or 'none'}"
         )
         lines.append("")
 
         if state["last_known_enemies"]:
-            lines.append("MISSING ENEMIES")
-            lines.append("-" * 72)
+            lines.append("#### Missing Enemies")
             for missing in state["last_known_enemies"]:
                 last_pos = missing.get("last_seen_position") or {}
                 lines.append(
@@ -197,14 +188,13 @@ class CompactStateFormatter:
         dead_entities = state.get("dead_entities") or []
         if dead_entities:
             lines.append("")
-            lines.append("CASUALTIES")
-            lines.append("-" * 72)
+            lines.append("#### Casualties")
             our_team = team.name
             friendly_losses = [d for d in dead_entities if d.get("team") == our_team]
             enemy_losses = [d for d in dead_entities if d.get("team") != our_team]
 
             if friendly_losses:
-                lines.append("  Friendly casualties:")
+                lines.append("- **Friendly casualties:**")
                 for dead in friendly_losses:
                     killer = dead.get("killed_by") or {}
                     parts = [
@@ -219,7 +209,7 @@ class CompactStateFormatter:
                     lines.append(" ".join(filter(None, parts)))
 
             if enemy_losses:
-                lines.append("  Enemy casualties:")
+                lines.append("- **Enemy casualties:**")
                 for dead in enemy_losses:
                     killer = dead.get("killed_by") or {}
                     parts = [
@@ -236,8 +226,7 @@ class CompactStateFormatter:
         unit_sections = self._unit_sections(intel, allowed_actions, self.config)
         if unit_sections:
             lines.append("")
-            lines.append("ALLY UNITS & OPTIONS")
-            lines.append("-" * 72)
+            lines.append("#### Ally Units & Options")
             lines.extend(self._terminology_lines())
             lines.append("")  # Spacer after terminology for readability
             lines.extend(unit_sections)
@@ -245,8 +234,7 @@ class CompactStateFormatter:
         distant = self._distant_enemies(intel, self.config)
         if distant:
             lines.append("")
-            lines.append(f"DISTANT VISIBLE ENEMIES (>{self.config.nearby_enemy_distance})")
-            lines.append("-" * 72)
+            lines.append(f"#### Distant Visible Enemies (>{self.config.nearby_enemy_distance})")
             for entry in distant:
                 parts = [
                     f"- Enemy #{entry['enemy_id']} {entry['type']} at ({entry['position']['x']}, {entry['position']['y']})",
@@ -264,8 +252,7 @@ class CompactStateFormatter:
         collision_section = self._format_collision_section(move_conflicts)
         if collision_section:
             lines.append("")
-            lines.append("POTENTIAL MOVE COLLISIONS (ALLIES)")
-            lines.append("-" * 72)
+            lines.append("#### Potential Move Collisions (Allies)")
             lines.append("Note: multiple allies could enter the same cell next turn.")
             lines.extend(collision_section)
 
@@ -464,10 +451,12 @@ class CompactStateFormatter:
         actions: List[Action],
         intel: TeamIntel,
     ) -> Dict[str, Any]:
+        shoot_state = self._shoot_state(entity)
         formatted: Dict[str, Any] = {
             "can_wait": False,
             "movement_options": [],
             "shooting_options": [],
+            "blocked_shooting_options": [],
             "toggle_option": None,
             "can_move": bool(getattr(entity, "can_move", False)),
         }
@@ -499,6 +488,15 @@ class CompactStateFormatter:
                 formatted["can_wait"] = True
             elif action.type == ActionType.SHOOT:
                 target_id = action.params.get("target_id")
+                # If the unit cannot shoot right now (e.g., SAM cooling), treat this as blocked.
+                if not shoot_state["can_shoot_now"]:
+                    formatted["blocked_shooting_options"].append(
+                        {
+                            "target_id": target_id,
+                            "reason": shoot_state.get("reason") or shoot_state.get("status"),
+                        }
+                    )
+                    continue
                 entry = {
                     "target_id": target_id,
                     "target_type": None,
@@ -550,10 +548,22 @@ class CompactStateFormatter:
     ) -> List[str]:
         lines: List[str] = []
         unit_label = getattr(entity.kind, "name", str(entity.kind))
-        lines.append(f"== ALLY UNIT #{entity.id} ({unit_label}) ==")
+        box_width = 78
+
+        def top_bar(title: str) -> str:
+            prefix = f"╔═══ {title} "
+            fill = max(box_width - len(prefix) - 1, 0)
+            return prefix + "═" * fill
+
+        def bottom_bar() -> str:
+            return "╚" + "═" * (box_width - 2) + "╝"
+
+        def pad(content: str) -> str:
+            return f"║ {content}"
+
+        lines.append(top_bar(f"ALLY Unit #{entity.id} - {unit_label}"))
         # General info
-        lines.append("  General:")
-        lines.append(f"    - Position: ({entity.pos[0]}, {entity.pos[1]})")
+        lines.append(pad(f"**Position:** x={entity.pos[0]}, y={entity.pos[1]}"))
         caps = []
         if entity.can_move:
             caps.append("Mobile")
@@ -566,49 +576,56 @@ class CompactStateFormatter:
         radar_nominal = getattr(entity, "radar_range", None)
         if radar_nominal is not None and radar_nominal > 0:
             if radar_active and radar_active > 0:
-                caps.append(f"RadarRange={radar_nominal} (active)")
+                caps.append(f"Radar({radar_nominal}) active")
             else:
-                caps.append(f"RadarRange={radar_nominal} (currently OFF)")
+                caps.append(f"Radar({radar_nominal}) off")
         weapon_range = getattr(entity, "missile_max_range", None)
         if weapon_range is not None:
-            caps.append(f"WeaponRange={weapon_range} (cells)")
+            caps.append(f"WeaponRange={weapon_range}")
         if caps:
-            lines.append(f"    - Capabilities: {', '.join(caps)}")
+            lines.append(pad(f"**Capabilities:** {', '.join(caps)}"))
         shoot_state = self._shoot_state(entity)
         if shoot_state.get("status") != "READY":
             note_parts = [shoot_state.get("status")]
             if shoot_state.get("reason"):
                 note_parts.append(shoot_state["reason"])
-            lines.append(f"    - Shoot status: {' - '.join(filter(None, note_parts))}")
+            lines.append(pad(f"**Shoot status:** {' - '.join(filter(None, note_parts))}"))
         # SAM specific status
         if getattr(entity, "kind", None) == EntityKind.SAM:
             sam_on = bool(getattr(entity, "on", False))
             cooldown = getattr(entity, "_cooldown", 0)
             if sam_on:
                 if cooldown > 0:
-                    lines.append(f"    - SAM Status: ON, cooling down ({cooldown} turn(s) remaining)")
+                    lines.append(pad(f"**SAM Status:** ON, cooling down ({cooldown} turn(s) remaining)"))
                 else:
-                    lines.append("    - SAM Status: ON & READY (visible to enemies)")
+                    lines.append(pad("**SAM Status:** ON & READY (visible to enemies)"))
             else:
-                lines.append("    - SAM Status: OFF (not emitting/visible; radar off; cannot shoot while off)")
+                lines.append(pad("**SAM Status:** OFF (not emitting/visible; radar off; cannot shoot while off)"))
+
+        lines.append("║")
 
         # Nearby allies
         nearby_allies = self._get_nearby_allies(entity, intel, cfg)
         if nearby_allies:
-            lines.append(f"  Nearby Allies (within {cfg.nearby_unit_distance}):")
+            lines.append(pad(f"**▶ Nearby Allies (within {cfg.nearby_unit_distance}):**"))
             for a in nearby_allies:
                 rel = a["relative_position"]
                 lines.append(
-                    f"    - #{a['unit_id']} ({a['type']}) rel={rel['direction']} (dx={rel['dx']}, dy={rel['dy']}, dist={rel['distance']})"
+                    pad(
+                        f"  • #{a['unit_id']} ({a['type']}) rel={rel['direction']} "
+                        f"(dx={rel['dx']}, dy={rel['dy']}, dist={rel['distance']})"
+                    )
                 )
         else:
-            lines.append("  Nearby Allies: none")
+            lines.append(pad("**▶ Nearby Allies:** none"))
+
+        lines.append("║")
 
         # Threats (visible enemies within radius)
         threats = self._get_threats(entity, intel, cfg)
         detected = threats["detected_enemies"]
         if detected:
-            lines.append(f"  Threats (within {cfg.nearby_enemy_distance}):")
+            lines.append(pad(f"**⚠ Threats (within {cfg.nearby_enemy_distance}):**"))
             for threat in detected:
                 rel = threat["relative_position"]
                 risk_level = threat.get("risk_level") or "UNKNOWN"
@@ -633,37 +650,46 @@ class CompactStateFormatter:
                         desc_parts.append(f"enemy_hit≈{te.get('estimated_their_hit_probability')} (if they shoot)")
                     else:
                         desc_parts.append(f"safe_margin={threat.get('safety_distance_margin')}")
-                lines.append("    - " + "; ".join(str(p) for p in desc_parts if p))
+                lines.append(pad("  • " + "; ".join(str(p) for p in desc_parts if p)))
         else:
-            lines.append(f"  Threats (within {cfg.nearby_enemy_distance}): none")
+            lines.append(pad(f"**⚠ Threats (within {cfg.nearby_enemy_distance}):** none"))
+
+        lines.append("║")
 
         # Actions (brief)
         available = self._format_available_actions(entity, actions, intel)
-        lines.append("  Available Actions:")
+        lines.append(pad("**📋 Available Actions:**"))
         move_lines = self._format_move_actions(available.get("movement_options", []), available.get("can_move", False))
         for ml in move_lines:
-            lines.append(f"    - {ml}")
+            lines.append(pad(f"  • {ml}"))
 
         shoot_lines = self._format_shoot_actions(available.get("shooting_options", []))
         if shoot_lines:
             for sl in shoot_lines:
-                lines.append(f"    - {sl}")
+                lines.append(pad(f"  • {sl}"))
 
         toggle = available.get("toggle_option")
         if toggle:
-            lines.append(f"    - TOGGLE to {toggle.get('toggle_to')} (currently {toggle.get('current_state')})")
+            lines.append(pad(f"  • TOGGLE to {toggle.get('toggle_to')} (currently {toggle.get('current_state')})"))
 
         if available.get("can_wait"):
-            lines.append("    - WAIT")
+            lines.append(pad("  • WAIT"))
         if not (move_lines or shoot_lines or toggle or available.get("can_wait")):
-            lines.append("    - none")
+            lines.append(pad("  • none"))
+
+        blocked_shots = available.get("blocked_shooting_options", [])
+        if blocked_shots:
+            lines.append(pad("  • **Blocked Shots:**"))
+            for bs in blocked_shots:
+                reason = bs.get("reason")
+                lines.append(pad(f"    - SHOOT #{bs.get('target_id')} (blocked: {reason or 'not ready'})"))
 
         # Blocked moves (informational, not offered as available)
         blocked_moves = [
             m for m in available.get("movement_options", []) if not m.get("allowed") and m.get("blocked_reason")
         ]
         if blocked_moves:
-            lines.append("  Blocked Moves:")
+            lines.append(pad("  • **Blocked Moves:**"))
             for m in blocked_moves:
                 reason = m.get("blocked_reason")
                 blocker = m.get("blocked_by_id")
@@ -675,39 +701,49 @@ class CompactStateFormatter:
 
                 if reason == "blocked_by_enemy_immobile" and blocker:
                     lines.append(
-                        f"    - {m['direction']} (enemy #{blocker} {blocker_type or ''} occupying; likely hard block)".rstrip()
+                        pad(
+                            f"    - {m['direction']} (enemy #{blocker} {blocker_type or ''} occupying; likely hard block)".rstrip()
+                        )
                     )
                 elif reason == "blocked_by_enemy_maybe_moves" and blocker:
                     lines.append(
-                        f"    - {m['direction']} (enemy #{blocker} {blocker_type or ''} currently there; could vacate)".rstrip()
+                        pad(
+                            f"    - {m['direction']} (enemy #{blocker} {blocker_type or ''} currently there; could vacate)".rstrip()
+                        )
                     )
                 elif reason == "blocked_by_friendly_immobile" and blocker:
                     lines.append(
-                        f"    - {m['direction']} (ally #{blocker} {blocker_type or ''} immobile; hard block)".rstrip()
+                        pad(
+                            f"    - {m['direction']} (ally #{blocker} {blocker_type or ''} immobile; hard block)".rstrip()
+                        )
                     )
                 elif reason == "blocked_by_friendly_maybe_moves" and blocker:
                     lines.append(
-                        f"    - {m['direction']} (ally #{blocker} {blocker_type or ''} currently there; opens if they move away)".rstrip()
+                        pad(
+                            f"    - {m['direction']} (ally #{blocker} {blocker_type or ''} currently there; opens if they move away)".rstrip()
+                        )
                     )
                 elif reason == "out_of_bounds":
-                    lines.append(f"    - {m['direction']} (out of bounds)")
+                    lines.append(pad(f"    - {m['direction']} (out of bounds)"))
                 elif reason:
-                    lines.append(f"    - {m['direction']} ({reason})")
+                    lines.append(pad(f"    - {m['direction']} ({reason})"))
+
+        lines.append(bottom_bar())
 
         return lines
 
     def _terminology_lines(self) -> List[str]:
         """Reusable legend to keep unit sections compact but unambiguous."""
         return [
-            "  Terminology:",
-            "    - rel=<DIR> (dx, dy, dist): direction and offsets from this unit; x: left-/right+, y: down-/up+; dist=straight-line (grid cells).",
-            "    - Risk/threat: DANGER=can shoot; CAUTION=almost in range; SAFE=out of range; UNARMED=cannot shoot.",
-            "    - closest_ally_dist: straight-line distance from that enemy to the nearest friendly (grid cells).",
-            "    - Safe margin: cells we are outside the enemy's assumed max range (armed enemies only).",
-            "    - Confirmed shooter: has fired before, so not a decoy.",
-            "    - our_hit: estimated hit probability if we shoot them now; enemy_hit: estimated hit probability if they shoot us now.",
-            "    - out_of_range_by: how many cells we are short of our own weapon range for that target.",
-            "    - Move collisions: cells multiple allies could move into next turn (avoid duplicate selection).",
+            "- **Terminology:**",
+            "  - **rel=<DIR> (dx, dy, dist):** direction and offsets from this unit; x: left-/right+, y: down-/up+; dist=straight-line (grid cells).",
+            "  - **Risk/threat:** DANGER=can shoot; CAUTION=almost in range; SAFE=out of range; UNARMED=cannot shoot.",
+            "  - **closest_ally_dist:** straight-line distance from that enemy to the nearest friendly (grid cells).",
+            "  - **Safe margin:** cells we are outside the enemy's assumed max range (armed enemies only).",
+            "  - **Confirmed shooter:** has fired before, so not a decoy.",
+            "  - **our_hit / enemy_hit:** estimated hit probability if we shoot them now / if they shoot us now.",
+            "  - **out_of_range_by:** how many cells we are short of our own weapon range for that target.",
+            "  - **Move collisions:** cells multiple allies could move into next turn (avoid duplicate selection).",
         ]
 
     # ------------------------------------------------------------------ #
