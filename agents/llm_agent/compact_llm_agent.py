@@ -323,31 +323,6 @@ class LLMCompactAgent(BaseAgent):
             "combat": combat_entries,
         }
 
-    def _maybe_get_strategy(
-        self,
-        world: WorldState,
-        state_dict: Dict[str, Any],
-        state_text: str,
-    ) -> tuple[Optional[Dict[str, Any]], Optional[str]]:
-        """
-        Invoke the compact strategist once at game start to get an initial plan.
-        """
-        if self._strategy_plan is not None:
-            return self._strategy_plan, None
-
-        # Only call on the first visible turn to avoid repeated calls.
-        if world.turn > 1:
-            return None, None
-
-        try:
-            self.game_deps.current_turn_number = world.turn
-            self.game_deps.current_state_dict = state_dict
-            result:AgentRunResult[StrategyOutput] = strategist_compact_agent.run_sync(user_prompt=state_text, deps=self.game_deps)
-            self._strategy_plan = result.data if hasattr(result, "data") else result
-            return self._strategy_plan, None
-        except Exception as exc:
-            return None, f"strategy call failed: {exc}"
-
     def _ensure_strategy(
         self,
         world: WorldState,
@@ -369,8 +344,16 @@ class LLMCompactAgent(BaseAgent):
         if world.turn > 1 and not force:
             return None, None, False
 
-        plan, error = self._maybe_get_strategy(world, state_dict, state_text)
-        return plan, error, plan is not None
+        try:
+            self.game_deps.current_turn_number = world.turn
+            self.game_deps.current_state_dict = state_dict
+            result: AgentRunResult[StrategyOutput] = strategist_compact_agent.run_sync(
+                user_prompt=state_text, deps=self.game_deps
+            )
+            self._strategy_plan = result.data if hasattr(result, "data") else result
+            return self._strategy_plan, None, True
+        except Exception as exc:
+            return None, f"strategy call failed: {exc}", True
 
     def _run_analyst(
         self,
