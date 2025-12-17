@@ -1,4 +1,5 @@
 import json
+import re
 from typing import List, Dict, Any, Optional
 
 from dotenv import load_dotenv
@@ -33,7 +34,7 @@ class AnalystCompactOutput(BaseModel):
         default_factory=list,
     )
     key_facts: List[str] = Field(
-        description="Facts or events the analyst wants to remember for future turns (include turn numbers when possible).",
+        description="Facts or events the analyst wants to remember for future turns.",
         default_factory=list,
     )
     needs_replan: bool = Field(
@@ -45,17 +46,27 @@ class AnalystCompactOutput(BaseModel):
     )
 
 
+def _strip_turn_prefix(text: str, turn: int) -> str:
+    """
+    Remove a leading "Turn X" or "TX" label from a fact to avoid duplicated turn labels.
+    """
+    pattern = re.compile(rf"^(?:turn\s+{turn}|t{turn})\s*[:\-]?\s*", flags=re.IGNORECASE)
+    cleaned = pattern.sub("", text.strip())
+    return cleaned.strip(":- ").strip() or text.strip()
+
+
 def _format_key_facts(analyst_history: Dict[int, "AnalystCompactOutput"]) -> str:
     if not analyst_history:
         return "- None recorded yet."
     lines: List[str] = []
     for turn in sorted(analyst_history.keys()):
-        key_facts = analyst_history[turn].key_facts or []
+        key_facts = [f for f in (analyst_history[turn].key_facts or []) if str(f).strip()]
         if not key_facts:
             continue
-        lines.append(f"Turn {turn}:")
+        lines.append(f"- Turn {turn}:")
         for fact in key_facts:
-            lines.append(f"  - {fact}")
+            cleaned = _strip_turn_prefix(str(fact), turn)
+            lines.append(f"  - {cleaned}")
     return "\n".join(lines) if lines else "- None recorded yet."
 
 
@@ -182,7 +193,11 @@ def full_prompt(ctx: RunContext[GameDeps]) -> str:
         getattr(deps, "team_name", None),
     )
     prev_turns = [t for t in history.keys() if t < getattr(deps, "current_turn_number", 0)]
-    previous_analysis = history[max(prev_turns)].analysis if prev_turns else "None yet."
+    if prev_turns:
+        last_turn = max(prev_turns)
+        previous_analysis = f"Turn {last_turn}:\n{history[last_turn].analysis}"
+    else:
+        previous_analysis = "None yet."
     current_state = deps.current_state or "No current state available."
 
     return f"""
@@ -227,10 +242,13 @@ You are the analyst supporting the strategist  and field executer for {team_labe
 Use the AnalystCompactOutput schema with:
 - analysis: clear narrative for executor with embedded highlights where helpful.
 - key_points_for_executor: bullet reminders if any.
-- key_facts: facts for future-self (concise, include turn numbers when known).
+- key_facts: facts for future-self (concise).
 - needs_replan: True only if conditions match strategist callbacks or the plan is invalidated.
 - replan_reason: short reason if needs_replan is True.
 
 ## RESPONSE FORMAT
 Return a tool call to 'final_result' using the AnalystCompactOutput schema only. Do not include prose outside the tool call.
+- WRONG - DO NOT DO THIS:
+    - Calling final_result with placeholder text like "arguments_final_result"
+    - Returning empty arguments
 """
