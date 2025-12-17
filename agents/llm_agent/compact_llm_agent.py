@@ -41,7 +41,6 @@ class LLMCompactAgent(BaseAgent):
         self._enemy_memory: Dict[int, Dict[str, Any]] = {}
         self._casualties: Dict[str, List[Dict[str, Any]]] = {"friendly": [], "enemy": []}
         self._recorded_kill_ids: Set[int] = set()
-        self._strategy_plan: Optional[StrategyOutput] = None
         self.game_deps = GameDeps()
         self.game_deps.team_name = self.team.name
         # Share live references so prompts can access the latest info without per-call copies.
@@ -102,7 +101,7 @@ class LLMCompactAgent(BaseAgent):
         # Pseudo-flow for multi-agent pipeline (Strategist -> Analyst -> Executor).
         # 1) Strategist: produce initial plan on first turn.
         strategy_error = self._maybe_get_initial_strategy()
-        strategy_plan = self._strategy_plan
+        strategy_plan = self.game_deps.strategy_plan
 
         # 2) Analyst: assess current state + history, decide whether to re-strategize, produce notes.
         analyst_output, analyst_error = self._run_analyst()
@@ -168,7 +167,7 @@ class LLMCompactAgent(BaseAgent):
         """
         Fetch the initial strategy on the first turn if not already cached.
         """
-        if self._strategy_plan is not None or self.game_deps.current_turn_number != 0:
+        if self.game_deps.strategy_plan is not None or self.game_deps.current_turn_number != 0:
             return None
 
         try:
@@ -179,8 +178,7 @@ class LLMCompactAgent(BaseAgent):
             result: AgentRunResult[StrategyOutput] = strategist_compact_agent.run_sync(
                 user_prompt=user_prompt, deps=self.game_deps
             )
-            self._strategy_plan = result.output
-            self.game_deps.strategy_plan = self._strategy_plan
+            self.game_deps.strategy_plan = result.output
             self.game_deps.just_replanned = True
             return None
         except Exception as exc:
@@ -193,8 +191,8 @@ class LLMCompactAgent(BaseAgent):
         """
         Run the strategist when forced or when no plan is cached.
         """
-        if self._strategy_plan is not None and not force_replan:
-            return self._strategy_plan, None, False
+        if self.game_deps.strategy_plan is not None and not force_replan:
+            return self.game_deps.strategy_plan, None, False
 
         try:
             user_prompt = (
@@ -204,10 +202,9 @@ class LLMCompactAgent(BaseAgent):
             result: AgentRunResult[StrategyOutput] = strategist_compact_agent.run_sync(
                 user_prompt=user_prompt, deps=self.game_deps
             )
-            self._strategy_plan = result.output
-            self.game_deps.strategy_plan = self._strategy_plan
+            self.game_deps.strategy_plan = result.output
             self.game_deps.just_replanned = True
-            return self._strategy_plan, None, True
+            return self.game_deps.strategy_plan, None, True
         except Exception as exc:
             return None, str(exc), False
 
