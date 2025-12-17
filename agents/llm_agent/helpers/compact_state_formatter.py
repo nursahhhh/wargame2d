@@ -103,21 +103,38 @@ class CompactStateFormatter:
             "missing_enemies": len(missing_enemies),
         }
 
+        dead_entities: Optional[List[Dict[str, Any]]] = None
+        if self.config.include_dead_entities:
+            dead_entities = self._dead_entities(intel, casualties)
+
+        unit_details = [
+            self._friendly_unit_structured(entity, intel, allowed_actions.get(entity.id, []), self.config)
+            for entity in intel.friendlies
+            if entity.alive
+        ]
+
         payload: Dict[str, Any] = {
             "team": team.name,
             "turn_summary": summary,
             "friendly_units": friendly_units,
+            "friendly_units_detailed": unit_details,
             "enemy_units": enemy_units,
+            "distant_visible_enemies": self._distant_enemies(intel, self.config),
             "last_known_enemies": missing_enemies,
             "battlefield": {
                 "width": world.grid.width,
                 "height": world.grid.height,
                 "center": {"x": world.grid.width // 2, "y": world.grid.height // 2},
             },
+            "forces_snapshot": self._forces_snapshot(intel, enemy_units, dead_entities),
+            "potential_move_conflicts": self._structured_move_conflicts(
+                self._collect_move_conflicts(allowed_actions, intel)
+            ),
+            "coordinate_system": self._coordinate_system_lines(),
         }
 
-        if self.config.include_dead_entities:
-            payload["dead_entities"] = self._dead_entities(intel, casualties)
+        if self.config.include_dead_entities and dead_entities is not None:
+            payload["dead_entities"] = dead_entities
         if casualties is not None:
             payload["casualties"] = casualties
         if self.config.include_orientation_metadata:
@@ -517,6 +534,47 @@ class CompactStateFormatter:
                 formatted.setdefault("other_actions", []).append({"type": action.type.name, "raw": action.params})
 
         return formatted
+
+    def _friendly_unit_structured(
+        self,
+        entity,
+        intel: TeamIntel,
+        actions: List[Action],
+        cfg: CompactFormatterConfig,
+    ) -> Dict[str, Any]:
+        """
+        Structured snapshot paralleling the unit block used in the string formatter.
+        """
+        shoot_state = self._shoot_state(entity)
+        radar_active = getattr(entity, "get_active_radar_range", lambda: None)()
+        radar_nominal = getattr(entity, "radar_range", None)
+        sam_status = None
+        if getattr(entity, "kind", None) == EntityKind.SAM:
+            sam_status = {
+                "on": bool(getattr(entity, "on", False)),
+                "cooldown_remaining": getattr(entity, "_cooldown", 0),
+            }
+
+        return {
+            "id": entity.id,
+            "type": getattr(entity.kind, "name", str(entity.kind)),
+            "position": {"x": entity.pos[0], "y": entity.pos[1]},
+            "capabilities": {
+                "can_move": bool(getattr(entity, "can_move", False)),
+                "can_shoot": bool(getattr(entity, "can_shoot", False)),
+                "missiles_remaining": getattr(entity, "missiles", None),
+                "weapon_range": getattr(entity, "missile_max_range", None),
+                "radar_range": radar_nominal,
+                "radar_active_range": radar_active,
+            },
+            "status": {
+                "shoot_state": shoot_state,
+                "sam_status": sam_status,
+            },
+            "nearby_allies": self._get_nearby_allies(entity, intel, cfg),
+            "threats": self._get_threats(entity, intel, cfg),
+            "available_actions": self._format_available_actions(entity, actions, intel),
+        }
 
     def _unit_sections(
         self,
@@ -1079,3 +1137,19 @@ class CompactStateFormatter:
                 f"- Cell ({dest[0]}, {dest[1]}): " + "; ".join(details) + " -> collision risk (same destination)"
             )
         return lines
+
+    def _structured_move_conflicts(
+        self, move_conflicts: Dict[Tuple[int, int], List[Tuple[int, str, str]]]
+    ) -> List[Dict[str, Any]]:
+        """Structured version of potential move collisions."""
+        structured: List[Dict[str, Any]] = []
+        for dest, ids in sorted(move_conflicts.items()):
+            structured.append(
+                {
+                    "destination": {"x": dest[0], "y": dest[1]},
+                    "contenders": [
+                        {"entity_id": eid, "type": etype, "direction": direction} for eid, etype, direction in ids
+                    ],
+                }
+            )
+        return structured
