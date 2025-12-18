@@ -47,7 +47,7 @@ Action = Annotated[Union[MoveAction, ShootAction, WaitAction, ToggleAction], Fie
 class EntityAction(BaseModel):
     """A single unit's action with tactical justification."""
     reasoning: str = Field(
-        description="Brief tactical rationale for this action aligned to current strategy and threats."
+        description="Brief rationale explaining how this action aligns with current strategy. Cite specific strategic priorities or threats that motivate this choice."
     )
     action: Action = Field(description="The action this unit will execute")
 
@@ -55,7 +55,7 @@ class EntityAction(BaseModel):
 class TeamTurnPlan(BaseModel):
     """Complete turn plan with per-unit actions."""
     analysis: str = Field(
-        description="Concise rationale tying chosen actions to the current strategy and analyst highlights."
+        description="Action-oriented analysis explaining key priorities for this turn. Reference specific elements from current strategy, analyst highlights, and game state that inform the chosen approach. Highlight what matters most and why."
     )
     entity_actions: List[EntityAction] = Field(
         description="Ordered list of actions for each controllable unit, with reasoning"
@@ -100,7 +100,7 @@ You are the Execution Commander. Convert the strategist's plan and analyst highl
 ---
 
 # RESPONSE FORMAT
-Optionally include a <thinking>...</thinking> block, then return a tool call to 'final_result' with TeamTurnPlan only. No other prose.
+Respond with a tool call to 'final_result' with TeamTurnPlan.
 DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
 """
 
@@ -109,10 +109,10 @@ executer_compact_agent = Agent[GameDeps, TeamTurnPlan](
     "openrouter:deepseek/deepseek-v3.1-terminus:exacto",
     deps_type=GameDeps,
     output_type=TeamTurnPlan,
-    # model_settings=OpenRouterModelSettings(
-    #     max_tokens=1024 * 16,
-    #     openrouter_reasoning={"effort": "low"},
-    # ),
+    model_settings=OpenRouterModelSettings(
+        max_tokens=1024 * 16,
+        openrouter_reasoning={"effort": "low"},
+    ),
     instructions=EXECUTER_COMPACT_PROMPT,
     output_retries=3,
 )
@@ -145,6 +145,6 @@ Key points for executor:
 ---
 
 # RESPONSE FORMAT
-Optionally include a <thinking>...</thinking> block, then return a tool call to 'final_result' with TeamTurnPlan only. No other prose.
+Return a tool call to 'final_result' with TeamTurnPlan only.
 DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
 """

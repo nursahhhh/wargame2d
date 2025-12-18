@@ -468,7 +468,7 @@ class PromptFormatter:
         return {
             "we_can_shoot": True,
             "in_our_range": in_range,
-            "our_hit_probability": round(hit_prob, 3) if isinstance(hit_prob, float) else None,
+            "our_hit_probability": round(hit_prob, 2) if isinstance(hit_prob, float) else None,
             "out_of_our_range_by": round(distance - max_range, 1) if max_range and not in_range else None,
         }
 

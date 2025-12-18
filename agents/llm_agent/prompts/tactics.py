@@ -12,7 +12,7 @@ Destroy enemy AWACS while protecting yours. Time costs resources - aggressive pr
 - Keep AWACS at maximum rear distance with clear escape routes
 - Maintain 2+ unblocked retreat paths at all times
 - Position multiple defensive layers between AWACS and threats
-- Never expose AWACS unless victory is guaranteed
+- AWACS is valuable but, as long as it is in the safe distance, it can be used for radar spotting to support offensive actions.
 
 #### 2. INFORMATION WARFARE
 - Radar detection is SHARED across team (if one unit sees an enemy, all units can target it)
@@ -33,20 +33,21 @@ Destroy enemy AWACS while protecting yours. Time costs resources - aggressive pr
 - Each shot counts - make them matter
 
 #### 5. SAM TACTICS
-- **Stealth Positioning:** Keep SAMs OFF until optimal moment
+- **Stealth Positioning:** Keep SAMs OFF until optimal moment and bait enemy into range.
 - **Ambush Pattern:** Toggle ON → Shoot → Toggle OFF immediately
 - **Cooldown Safety:** Stay stealthed during ~5-turn reload period
 - **Surprise > Sustained Fire:** One good ambush shot beats continuous exposure
 
 #### 6. DECOY OPERATIONS
 - Mix decoys with real aircraft to create targeting uncertainty
-- Use decoys to bait enemy SAMs into revealing positions
+- Use decoys to bait enemy fire away from valuable units
 - Send decoys ahead to absorb fire and clear paths
+- Still don't lose decoy for nothing, try to trade decoy for an enemy entity if possible
 - Enemy can't distinguish decoys - exploit this
 
 #### 7. FORMATION CONCEPTS
-**Defense:** Layered screen with aircraft forward, AWACS back, hidden SAMs for surprise
-**Offense:** Decoys on flanks, real aircraft concentrated, probe multiple corridors
+**Defense:** Layered screen with aircraft forward, AWACS back, hidden SAMs for surprise, bait enemy into kill zones.
+**Offense:** Decoy(s) in front, aircraft follow 2-3 cells back to exploit cleared paths, AWACS behind for radar support.
 
 #### 8. TEMPO & AGGRESSION
 - Static defense loses to operational costs over time, but it is a balance

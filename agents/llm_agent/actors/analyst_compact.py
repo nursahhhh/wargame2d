@@ -14,8 +14,7 @@ load_dotenv()
 
 
 ANALYST_TASK = """
-- You are the 'analyst' working alongside the 'strategist' and 'field executer'. Your job is to read, analyse the current game status along 
-with history of events, actions and the current game strategy (created by the director), and convert it to a well explained clear, concise analysis telling what is going on the game board verbally for the 'field executer'.
+Your job is to read, carefully and objectively analyse the current game status along  with history of events, actions and the current game strategy (created by the director), and convert it to a well explained clear, concise analysis telling what is going on the game board verbally for the 'field executer'.
 Field executer will read your analysis after each turn to take actions. You can highlight/suggest some key-points inside your analysis to the 'field executer' to make things easier for him.
 
 - After each turn along with your analysis you can optionally record some key events/facts for future-self (they are only seen by you), like killed entities, fired missiles, anything you seem could be relevant for your future-self to better understand the history.
@@ -27,7 +26,7 @@ Field executer will read your analysis after each turn to take actions. You can 
 
 class AnalystCompactOutput(BaseModel):
     analysis: str = Field(
-        description="Concise narration of what is happening on the board for the field executer, with clear highlights."
+        description="Detailed analysis and narration of the board state for field execution. Cite specific board facts and explain your reasoning for each observation."
     )
     key_points_for_executor: List[str] = Field(
         description="Optional bullet highlights or reminders for the executor to pay attention to this turn.",
@@ -124,11 +123,11 @@ def _format_step_logs(history: dict[int, dict], max_turns: int, current_turn: in
     for turn in turns:
         delta = current_turn - turn
         if delta == 1:
-            header = f"Last turn (Turn {turn}):"
+            header = f"**Last turn (Turn {turn}):**"
         elif delta > 1:
-            header = f"{delta} turns ago (Turn {turn}):"
+            header = f"**{delta} turns ago (Turn {turn}):**"
         else:
-            header = f"Turn {turn}:"
+            header = f"**Turn {turn}:**"
         turn_log = history[turn] or {}
         our_lines: List[str] = []
         enemy_lines: List[str] = []
@@ -149,17 +148,20 @@ def _format_step_logs(history: dict[int, dict], max_turns: int, current_turn: in
         lines.append(f"{header}")
         lines.append("OUR ACTIONS")
         if our_lines:
-            lines.extend([f"- {l}" for l in our_lines])
+            lines.extend([f"  - {l}" for l in our_lines])
         else:
-            lines.append("- None observed.")
+            lines.append("  - None observed.")
 
+        lines.append("")  # spacing between our and enemy sections
         lines.append("ENEMY ACTIONS (Observed)")
         if enemy_lines:
-            lines.extend([f"- {l}" for l in enemy_lines])
+            lines.extend([f"  - {l}" for l in enemy_lines])
         else:
-            lines.append("- None observed.")
+            lines.append("  - None observed.")
 
-    return "\n".join(lines)
+        lines.append("")  # blank line between turns for clarity
+
+    return "\n".join(lines).strip()
 
 
 analyst_compact_agent = Agent[GameDeps, AnalystCompactOutput](
@@ -168,7 +170,7 @@ analyst_compact_agent = Agent[GameDeps, AnalystCompactOutput](
     output_type=AnalystCompactOutput,
     model_settings=OpenRouterModelSettings(
         max_tokens=1024 * 32,
-        openrouter_reasoning={"effort": "medium"},
+        openrouter_reasoning={"effort": "low"},
     ),
     output_retries=3,
 )
@@ -200,7 +202,7 @@ def full_prompt(ctx: RunContext[GameDeps]) -> str:
 
     return f"""
 # ROLE
-You are the analyst supporting the strategist  and field executer for {team_label}.
+You are the analyst supporting the strategist and executer agents for {team_label}.
 
 ---
 
@@ -245,6 +247,6 @@ Use the AnalystCompactOutput schema with:
 - replan_reason: short reason if needs_replan is True.
 
 ## RESPONSE FORMAT
-Optionally include a <thinking>...</thinking> block, then return a tool call to 'final_result' using the AnalystCompactOutput schema only. No other prose.
+Respond with tool call 'final_result' using the AnalystCompactOutput schema only.
 DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
 """

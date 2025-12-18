@@ -13,11 +13,13 @@ load_dotenv()
 
 class UnitStrategy(BaseModel):
     entity_id: int = Field(description="Friendly unit id.")
-    role: str = Field(description="One-sentence role/priority for this unit aligned to the plan; include stance if useful.")
+    role: str = Field(description="One-sentence role/priority for this unit aligned to the plan cite the specific context justifying this role.")
 
 
 class StrategyOutput(BaseModel):
-    analysis: str = Field(description="Concise analysis of the current state (threats, advantages, constraints).")
+    analysis: str = Field(
+        description="Detailed analysis of current state. For each point, cite the specific context facts that led to your conclusion and explain your reasoning."
+    )
     strategy: str = Field(description="High-level short-term gameplan to win as a team.")
     unit_strategies: List[UnitStrategy] = Field(description="Per-unit roles and postures for all alive friendlies.")
     call_me_back_if: List[str] = Field(description="Observable re-strategize triggers (concise conditions).")
@@ -56,13 +58,12 @@ class StrategyOutput(BaseModel):
 
 STRATEGIST_COMPACT_PROMPT = f"""
 # ROLE
-You are the Strategic Director for a 2D combat grid game. 
+You are the Strategist for a team on a 2D combat grid game.
 
 ---
 
 # YOUR TASK
-Analyze the current game rules and tactical state carefully. Identify the key advantages, disadvantages, 
-and potential winning conditions. Then, develop a short-term strategic plan that covers:
+Analyze the current game rules and tactical guides carefully. Identify the key strategies, quirks of the game which would carry you to a victory. Then, develop a short-term strategic plan that covers:
 
 1. A team-wide short-term strategy describing how the team should operate currently to achieve victory.
 
@@ -94,7 +95,7 @@ Don't overcomplicate stuff, it is a simple game.
 ---
 
 ## RESPONSE FORMAT
-Optionally include a <thinking>...</thinking> block for your reasoning, then return a tool call to 'final_result' using the StrategyOutput schema. No other prose.
+Return a tool call to 'final_result' using the StrategyOutput schema.
 DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
 """
 
@@ -105,7 +106,7 @@ strategist_compact_agent = Agent[GameDeps, StrategyOutput](
     output_type=StrategyOutput,            # ✅ use output_type (not result_type)
     model_settings=OpenRouterModelSettings(
         max_tokens=1024 * 32,
-        openrouter_reasoning={"effort": "medium"},
+        openrouter_reasoning={"effort": "low"},
     ),
     instructions=STRATEGIST_COMPACT_PROMPT,
     output_retries=3,                      # ✅ (replaces result_retries)

@@ -172,7 +172,7 @@ class LLMCompactAgent(BaseAgent):
         """
         try:
             result: AgentRunResult[AnalystCompactOutput] = analyst_compact_agent.run_sync(
-                user_prompt="Think first, then provide the analyst view for this turn. Return a proper tool call; never use placeholder arguments.",
+                user_prompt="Provide the analyst view for this turn.",
                 deps=self.game_deps,
             )
             if store:
@@ -252,7 +252,6 @@ class LLMCompactAgent(BaseAgent):
         if not is_replan:
             return (
                 "Analyse the game state carefully and come up with winning strategy for the team.\n"
-                "Optionally include a <thinking>...</thinking> block, then call 'final_result' with concrete fields (no placeholders like 'arguments_final_result').\n"
                 f"{current_state}\n"
             )
 
@@ -551,6 +550,8 @@ class LLMCompactAgent(BaseAgent):
             target_visible_enemy = (
                 result.target_id in intel.visible_enemy_ids if result.target_id is not None else False
             )
+            attacker_memory = self._enemy_memory.get(result.attacker_id)
+            target_memory = self._enemy_memory.get(result.target_id) if result.target_id is not None else None
 
             # Only include if any party is friendly or currently visible enemy.
             if not (attacker_friend or target_friend or attacker_visible_enemy or target_visible_enemy):
@@ -565,7 +566,11 @@ class LLMCompactAgent(BaseAgent):
                     "type": attacker_ent.kind.name if attacker_ent and hasattr(attacker_ent, "kind") else None,
                 }
             else:
-                attacker_info = {"id": result.attacker_id, "team": None, "type": "UNKNOWN"}
+                attacker_info = {
+                    "id": result.attacker_id,
+                    "team": (attacker_memory or {}).get("team"),
+                    "type": (attacker_memory or {}).get("type") or "UNKNOWN",
+                }
 
             target_info: Dict[str, Any] = {}
             if target_friend or target_visible_enemy:
@@ -576,7 +581,11 @@ class LLMCompactAgent(BaseAgent):
                     "type": target_ent.kind.name if target_ent and hasattr(target_ent, "kind") else None,
                 }
             else:
-                target_info = {"id": result.target_id, "team": None, "type": "UNKNOWN"}
+                target_info = {
+                    "id": result.target_id,
+                    "team": (target_memory or {}).get("team"),
+                    "type": (target_memory or {}).get("type") or "UNKNOWN",
+                }
 
             combat_entries.append(
                 {
