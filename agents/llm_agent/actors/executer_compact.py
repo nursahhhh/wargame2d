@@ -101,17 +101,17 @@ You are the Execution Commander. Convert the strategist's plan and analyst highl
 
 # RESPONSE FORMAT
 Respond with a tool call to 'final_result' with TeamTurnPlan.
-DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
 """
+#DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
 
 
 executer_compact_agent = Agent[GameDeps, TeamTurnPlan](
-    "openrouter:deepseek/deepseek-v3.1-terminus:exacto",
+    "openrouter:openai/gpt-5-mini",#"openrouter:deepseek/deepseek-v3.1-terminus:exacto",
     deps_type=GameDeps,
     output_type=TeamTurnPlan,
     model_settings=OpenRouterModelSettings(
         max_tokens=1024 * 16,
-        openrouter_reasoning={"effort": "low"},
+        openrouter_reasoning={"effort": "medium"},
     ),
     instructions=EXECUTER_COMPACT_PROMPT,
     output_retries=3,
@@ -145,6 +145,7 @@ Key points for executor:
 ---
 
 # RESPONSE FORMAT
-Return a tool call to 'final_result' with TeamTurnPlan only.
-DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
+Return a tool call to 'final_result' with TeamTurnPlan.
 """
+
+# DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".

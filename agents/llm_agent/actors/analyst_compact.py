@@ -165,12 +165,12 @@ def _format_step_logs(history: dict[int, dict], max_turns: int, current_turn: in
 
 
 analyst_compact_agent = Agent[GameDeps, AnalystCompactOutput](
-    "openrouter:deepseek/deepseek-v3.1-terminus:exacto",
+    "openrouter:openai/gpt-5-mini",#"openrouter:deepseek/deepseek-v3.1-terminus:exacto",
     deps_type=GameDeps,
     output_type=AnalystCompactOutput,
     model_settings=OpenRouterModelSettings(
         max_tokens=1024 * 32,
-        openrouter_reasoning={"effort": "low"},
+        openrouter_reasoning={"effort": "medium"},
     ),
     output_retries=3,
 )
@@ -247,6 +247,7 @@ Use the AnalystCompactOutput schema with:
 - replan_reason: short reason if needs_replan is True.
 
 ## RESPONSE FORMAT
-Respond with tool call 'final_result' using the AnalystCompactOutput schema only.
-DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
+Respond with tool call 'final_result' using the AnalystCompactOutput schema.
 """
+
+# DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".

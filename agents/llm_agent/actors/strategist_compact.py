@@ -96,17 +96,16 @@ Don't overcomplicate stuff, it is a simple game.
 
 ## RESPONSE FORMAT
 Return a tool call to 'final_result' using the StrategyOutput schema.
-DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
 """
-
+#DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
 
 strategist_compact_agent = Agent[GameDeps, StrategyOutput](
-    "openrouter:deepseek/deepseek-v3.1-terminus:exacto",
+    "openrouter:openai/gpt-5-mini", #"openrouter:deepseek/deepseek-v3.1-terminus:exacto",
     deps_type=GameDeps,
     output_type=StrategyOutput,            # ✅ use output_type (not result_type)
     model_settings=OpenRouterModelSettings(
         max_tokens=1024 * 32,
-        openrouter_reasoning={"effort": "low"},
+        openrouter_reasoning={"effort": "medium"},
     ),
     instructions=STRATEGIST_COMPACT_PROMPT,
     output_retries=3,                      # ✅ (replaces result_retries)
