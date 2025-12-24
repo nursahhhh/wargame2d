@@ -1,5 +1,6 @@
-from typing import List, Literal, Union, Optional, Dict, Annotated
+from typing import List, Literal, Union, Optional, Dict, Annotated, Any
 
+import json
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
@@ -47,7 +48,7 @@ Action = Annotated[Union[MoveAction, ShootAction, WaitAction, ToggleAction], Fie
 class EntityAction(BaseModel):
     """A single unit's action with tactical justification."""
     reasoning: str = Field(
-        description="Brief rationale explaining how this action aligns with current strategy. Cite specific strategic priorities or threats that motivate this choice."
+        description="Brief rationale clearly justifying why this action is chosen for this unit"
     )
     action: Action = Field(description="The action this unit will execute")
 
@@ -55,10 +56,11 @@ class EntityAction(BaseModel):
 class TeamTurnPlan(BaseModel):
     """Complete turn plan with per-unit actions."""
     analysis: str = Field(
-        description="Action-oriented analysis explaining key priorities for this turn. Reference specific elements from current strategy, analyst highlights, and game state that inform the chosen approach. Highlight what matters most and why."
+        description="Detailed step by step action-oriented analysis explaining key priorities for this turn. Focus on current situation, "
+                    "enemy strategy & our strategy, and action implications"
     )
     entity_actions: List[EntityAction] = Field(
-        description="Ordered list of actions for each controllable unit, with reasoning"
+        description="Ordered list of actions for each controllable unit, with justification"
     )
 
 
@@ -68,20 +70,23 @@ def _format_strategy(deps: GameDeps) -> str:
     return deps.strategy_plan.to_text(include_analysis=False, include_callbacks=False)
 
 
-def _latest_analyst(deps: GameDeps) -> Dict[str, str]:
+def _latest_analyst(deps: GameDeps) -> Dict[str, Any]:
     if not deps.analyst_history:
-        return {"analysis": "None yet.", "highlights": []}
+        return {"analysis": "None yet.", "highlights": [], "action_implications": {}}
     latest_turn = max(deps.analyst_history.keys())
     latest = deps.analyst_history[latest_turn]
     return {
         "analysis": latest.analysis or "None provided.",
         "highlights": latest.key_points_for_executor or [],
+        "action_implications": latest.action_implications or {},
     }
 
 
 EXECUTER_COMPACT_PROMPT = f"""
 # ROLE
 You are the Executer Agent. Convert the "strategist"'s plan and "analyst" highlights into concrete, legal actions for this turn only.
+But you have free will to micro-deviate from the plan if the current state demands it. Analyse & decide for yourself to win. You have the field control & responsibility.
+Strategist & analyst doesn't see the full state, you do. You are the final decision maker.
 
 ---
 
@@ -102,7 +107,7 @@ You are the Executer Agent. Convert the "strategist"'s plan and "analyst" highli
 
 
 executer_compact_agent = Agent[GameDeps, TeamTurnPlan](
-    "openrouter:x-ai/grok-3-mini",#"openrouter:deepseek/deepseek-v3.1-terminus:exacto",
+    "openrouter:x-ai/grok-4.1-fast",#"openrouter:deepseek/deepseek-v3.1-terminus:exacto",
     deps_type=GameDeps,
     output_type=TeamTurnPlan,
     model_settings=OpenRouterModelSettings(
@@ -129,7 +134,12 @@ def full_prompt(ctx: RunContext[GameDeps]) -> str:
 ---
 
 # ANALYST TELLS:
-Analysis: {analyst['analysis']}
+Analysis: 
+{analyst['analysis']}
+
+Action Implications:
+{json.dumps(analyst['action_implications'], indent=2, ensure_ascii=False, default=str)}
+
 Key points for executor:
 {highlights}
 
@@ -138,10 +148,8 @@ Key points for executor:
 # CURRENT GAME STATE
 {deps.current_state}
 
----
-
-# RESPONSE FORMAT
-Return a tool call to 'final_result' with TeamTurnPlan.
 """
 
 # DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
+# RESPONSE FORMAT
+# Return a tool call to 'final_result' with TeamTurnPlan.

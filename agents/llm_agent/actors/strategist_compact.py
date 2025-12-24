@@ -14,16 +14,18 @@ load_dotenv()
 class UnitStrategy(BaseModel):
     entity_id: int = Field(description="Friendly unit id.")
     #role: str = Field(description="One-sentence role/priority for this unit aligned to the plan cite the specific context justifying this role.")
-    role: str = Field(description="High-level short-term standing role and order for this entity to execute the current strategy.")
+    #role: str = Field(description="Pseudo-code like clear, well formatted, well structured roles & directives for this entity to execute the current strategy. Avoid using exact fire probability thresholds.")
+    role: str = Field(
+        description="Clear, well formatted high-level roles&directives for this entity to execute the current strategy.")
 
 class StrategyOutput(BaseModel):
     # analysis: str = Field(
     #     description="Detailed analysis of current state. For each point, cite the specific context facts that led to your conclusion and explain your reasoning."
     # )
-    analysis: str = Field(description="Step-by-step analysis of current state, threats, opportunities")
-    strategy: str = Field(description="High-level short-term gameplan to win as a team.")
+    analysis: str = Field(description="Step-by-step analysis of current state overview, game stage, enemy's strategy, potential threats & opportunities")
+    strategy: str = Field(description="Clear well structured, short-term gameplan to win as a team with justifications.")
     unit_strategies: List[UnitStrategy] = Field(description="Per-unit roles and postures for all alive friendlies.")
-    call_me_back_if: List[str] = Field(description="Observable re-strategize triggers (concise conditions).")
+    call_me_back_if: List[str] = Field(description="Observable re-strategize triggers (concise conditions). Re-strategizing is costly, so only include critical triggers.")
 
     def to_text(self, include_analysis: bool = True, include_callbacks: bool = True) -> str:
         """
@@ -64,16 +66,15 @@ You are the Strategist for a team on a 2D combat grid game.
 ---
 
 # YOUR TASK
-Analyze the current game rules and tactical guides carefully. Identify the key strategies, quirks of the game which would carry you to a victory. Then, develop a short-term strategic plan that covers:
+Analyze the current game rules and tactical guides carefully. Identify the key strategies which would carry you to a victory. Then, develop a short-term strategic plan that covers:
 
 1. A team-wide short-term strategy describing how the team should operate currently to achieve victory.
 
-2. Individual unit strategies for each alive entity (e.g., AWACS, Aircraft, SAM, Decoy) that define their current roles, priorities, and coordination patterns.
+2. Individual unit directives for each alive entity (e.g., AWACS, Aircraft, SAM, Decoy) that define their current roles, priorities, coordination patterns and how should they behave in high-level generalized manner.
 
-3. Clear re-strategize triggers: Define well-defined specific conditions that would invalidate (unexpected conditions, or expected next-phase trigger) the current plan and require a new strategy. Re-strategizing is costly—only trigger when the situation fundamentally changes.
+3. Clear re-strategize triggers: Define well-defined conditions that would invalidate (unexpected or expected next-phase transition) the current plan and require a new strategy.
 
-Act as a strategic director, not a field commander — focus on high-level, enduring strategy rather than turn-by-turn or micro-management decisions. 
-Don't overcomplicate things, it is a simple game.
+Act as a strategic director, not a field commander — focus on high-level, enduring strategy rather direct micro decisions. 
 
 ---
 
@@ -93,17 +94,27 @@ Don't overcomplicate things, it is a simple game.
 - unit_strategies: per-unit role + posture for each alive friendly.
 - call_me_back_if: observable, concise triggers to re-strategize.
 """
+
+# """
+# # OUTPUT
+# ## EXPECTED OUTPUT (StrategyOutput)
+# - analysis: concise take on state (threats, advantages, constraints).
+# - strategy: team-level short-term gameplan (no micro orders).
+# - unit_strategies: per-unit role + posture for each alive friendly.
+# - call_me_back_if: observable, concise triggers to re-strategize.
+# """
+
 # ## RESPONSE FORMAT
 # Return a tool call to 'final_result' using the StrategyOutput schema.
 #DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
 
 strategist_compact_agent = Agent[GameDeps, StrategyOutput](
-    "openrouter:x-ai/grok-3-mini", #"openrouter:deepseek/deepseek-v3.1-terminus:exacto",
+    "openrouter:x-ai/grok-4.1-fast", #"openrouter:deepseek/deepseek-v3.1-terminus:exacto",
     deps_type=GameDeps,
     output_type=StrategyOutput,            # ✅ use output_type (not result_type)
     model_settings=OpenRouterModelSettings(
         max_tokens=1024 * 32,
-        openrouter_reasoning={"effort": "medium", "enabled":True},
+        openrouter_reasoning={"effort": "high", "exclude":False, "enabled":True},
     ),
     instructions=STRATEGIST_COMPACT_PROMPT,
     output_retries=3,                      # ✅ (replaces result_retries)

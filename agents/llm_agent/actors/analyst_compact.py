@@ -9,6 +9,7 @@ from pydantic_ai.models.openrouter import OpenRouterModelSettings
 
 from agents.llm_agent.actors.game_deps import GameDeps
 from agents.llm_agent.prompts.game_info import GAME_INFO
+from agents.llm_agent.prompts.tactics import TACTICAL_GUIDE
 
 load_dotenv()
 
@@ -16,21 +17,38 @@ load_dotenv()
 
 class AnalystCompactOutput(BaseModel):
     analysis: str = Field(
-        description="Detailed analysis and narration of the board state for field execution. Cite specific board facts and explain your reasoning for each observation. Do not recommend direct actions."
+        description="Detailed analysis and narration of the board state, consisting of the "
+                    "\nGame Overview: Provide a brief overview of the current situation"
+                    "\nCurrent Game Stage: Determine the stage of the game based on the information. Is it the early game, mid-game, or late game?"
+                    "\nOur Situation: Describe our current status"
+                    "\nOur Strategy:  Examine our current strategy and its effectiveness."
+                    "\nEnemy's Strategy: Infer the enemy’s potential strategy, based on the available information"
+                    "\nKey Information: Highlight any critical information that could impact decision-making, such as threats, opportunities, or resource status."
+                    "\nDo not recommend direct actions."
     )
+    action_inferences: Dict[int, str] = Field(
+        description="For each alive visible enemy entity (integer key as id, like 3, 4 not like #3, #4), infer their next action using the history/logs/trends. ",
+        default_factory=dict,
+    )
+    action_implications: Dict[int,str]  = Field(
+        description="For each entity (integer key as id, like 3, 4 not like #3, #4), value is the analysis of each valid action (each move or shoot action separately) for this entity and its short-term implications also considering the potential enemy actions and other potential ally actions. "
+                    "Consider nuances as well, example: if a decoy should screen another entity, they should act together (decoy through screening direction, other entity toward reverse direction) not separately. ",
+        default_factory=dict,
+    )
+
     key_points_for_executor: List[str] = Field(
-        description="Optional bullet highlights or risks the executor should notice this turn.",
+        description="Bullet highlights matters for the executor should notice this turn (risks, blocked moves, threats, opportunities), executer doesn't see the history as you do, distill key information for him.",
         default_factory=list,
     )
     key_facts: List[str] = Field(
-        description="Key facts or events the analyst wants to remember for future turns. (1-3 concise bullet points)",
+        description="Key facts or events for yourself to remember for future turns. (1-3 concise bullet points)",
         default_factory=list,
     )
     needs_replan: bool = Field(
         description="Whether the strategist should be called again to re-plan. Use True only for material shifts."
     )
     replan_reason: str = Field(
-        description="Short explanation of why re-planning is needed; empty if no re-plan.",
+        description="Short explanation of what is going on currently and why re-planning is needed; empty if no re-plan.",
         default="",
     )
 
@@ -192,7 +210,7 @@ def _format_step_logs(history: dict[int, dict], max_turns: int, current_turn: in
 
 
 analyst_compact_agent = Agent[GameDeps, AnalystCompactOutput](
-    "openrouter:x-ai/grok-3-mini",#"openrouter:deepseek/deepseek-v3.1-terminus:exacto",
+    "openrouter:x-ai/grok-4.1-fast",#"openrouter:deepseek/deepseek-v3.1-terminus:exacto",
     deps_type=GameDeps,
     output_type=AnalystCompactOutput,
     model_settings=OpenRouterModelSettings(
@@ -211,8 +229,8 @@ telling what is going on the game board verbally for the 'executer agent' who is
 Field executer will read your analysis after each turn to before taking actions. You can highlight key-points 
 inside your analysis to the 'executer agent' to make winning easier for him.
 
-- After each turn along with your analysis you can optionally record some key events/facts for future-self (they are only seen by you), like killed entities, fired missiles, anything you seem could be relevant for your future-self to better understand the history.
-- You will given the current strategy along with some re-strategize conditions by the 'strategy directory' specifying you when it is the time to re-plan. Other than that, you are free to decide when to re-plan if you think the current strategy is invalidated or obsolete.
+- After each turn along with your analysis you can optionally record some key events/facts for future-self (they are only seen by you), like killed entities, fired missiles, anything you seem could be relevant for your future-self to better understand the history. Think of them like history notes.
+- You will given the current strategy along with some re-strategize conditions by the 'strategy directory' specifying you when it is the time to re-plan. Other than that, you are free to decide when to re-plan if you think the current strategy is invalidated or obsolete (a good reason is inferred enemy strategy potentially disrupting ours). Or it has been 10 turns since last re-plan.
 - Thus you are responsible to take a 're-strategize' decision based on your analysis. It might mean current strategy phase is over either because it was successful or it was a failure and we need a new plan for the next phase.
 - Keep it clear and concise.
 """
@@ -257,6 +275,11 @@ You are the analyst supporting the strategist and executer agents for {team_labe
 
 ---
 
+# TACTICAL GUIDE
+{TACTICAL_GUIDE}
+
+---
+
 # STRATEGIST TELLS YOU
 {strategy_text}
 
@@ -278,6 +301,7 @@ You are the analyst supporting the strategist and executer agents for {team_labe
 # OUTPUT
 Use the AnalystCompactOutput schema with:
 - analysis: clear narrative for executor with embedded highlights where helpful. Do not recommend actions.
+- action_implications: for each entity (key as id, implications as value), analyse each valid action and its short-term implications considering potential enemy moves and other entity moves.
 - key_points_for_executor: bullet observations or risks; no action recommendations.
 - key_facts: facts for future-self (concise).
 - needs_replan: True only if conditions match strategist callbacks or the plan is invalidated.

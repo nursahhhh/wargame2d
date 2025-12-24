@@ -431,9 +431,9 @@ class CompactStateFormatter:
         other_team = Team.RED if team == Team.BLUE else Team.BLUE
         #other_orientation = self._get_orientation(other_team.name)
         lines = [
-            f"- {team.name}: spawn_side={orientation.spawn_side}, forward={orientation.forward.name}, backward={orientation.backward.name}",
+            f"- {team.name}: spawn_side={orientation.spawn_side}, **forward={orientation.forward.name}**, **backward={orientation.backward.name}**",
             #f"- {other_team.name}: spawn_side={other_orientation.spawn_side}, forward={other_orientation.forward.name}, backward={other_orientation.backward.name}",
-            f"- Note: {orientation.note}",
+            f"- **Note: {orientation.note}**",
         ]
         return lines
 

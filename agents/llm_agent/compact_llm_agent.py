@@ -225,7 +225,7 @@ class LLMCompactAgent(BaseAgent):
         """
         try:
             result: AgentRunResult[TeamTurnPlan] = executer_compact_agent.run_sync(
-                user_prompt="Propose the actions for this turn. Return a proper tool call; never use placeholder arguments.",
+                user_prompt="Analyse and propose the best actions for this turn.",
                 deps=self.game_deps,
             )
             mapped = self._map_team_plan_to_actions(result.output, allowed_actions)
@@ -252,7 +252,6 @@ class LLMCompactAgent(BaseAgent):
         if not is_replan:
             return (
                 "Analyse the game state carefully and come up with winning strategy for the team.\n"
-                "My suggestion is that bait enemy into sam zone, ambush them, kill them, then scout utilizing awacs as well using the up and bottom edges of the map, for invisibility"
                 f"{current_state}\n"
             )
 
