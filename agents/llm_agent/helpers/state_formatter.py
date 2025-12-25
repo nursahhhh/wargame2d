@@ -1,5 +1,5 @@
 """
-Lightweight, human-friendly state formatter for the compact LLM agent.
+Lightweight, human-friendly state formatter for the LLM agent.
 
 The output mirrors the earlier concise schema: team/turn summary, friendly
 units with nearby context and available actions, visible enemies, last-known
@@ -56,7 +56,7 @@ def _default_team_orientations() -> Dict[str, TeamOrientation]:
 
 
 @dataclass
-class CompactFormatterConfig:
+class StateFormatterConfig:
     nearby_unit_distance: float = 3.0
     nearby_enemy_distance: float = 5.0
     threat_approach_buffer: float = 2.0  # how far outside enemy range counts as CAUTION
@@ -70,9 +70,9 @@ class CompactFormatterConfig:
     )
 
 
-class CompactStateFormatter:
-    def __init__(self, config: Optional[CompactFormatterConfig] = None) -> None:
-        self.config = config or CompactFormatterConfig()
+class StateFormatter:
+    def __init__(self, config: Optional[StateFormatterConfig] = None) -> None:
+        self.config = config or StateFormatterConfig()
 
     def build_state(
         self,
@@ -154,7 +154,7 @@ class CompactStateFormatter:
         casualties: Optional[Dict[str, List[Dict[str, Any]]]] = None,
     ) -> str:
         """
-        Produce a single formatted string version of the compact state.
+        Produce a single formatted string version of the state.
         """
         state = self.build_state(
             world=world,
@@ -540,7 +540,7 @@ class CompactStateFormatter:
         entity,
         intel: TeamIntel,
         actions: List[Action],
-        cfg: CompactFormatterConfig,
+        cfg: StateFormatterConfig,
     ) -> Dict[str, Any]:
         """
         Structured snapshot paralleling the unit block used in the string formatter.
@@ -580,7 +580,7 @@ class CompactStateFormatter:
         self,
         intel: TeamIntel,
         allowed_actions: Dict[int, List[Action]],
-        cfg: CompactFormatterConfig,
+        cfg: StateFormatterConfig,
     ) -> List[str]:
         sections: List[str] = []
         for entity in intel.friendlies:
@@ -602,7 +602,7 @@ class CompactStateFormatter:
         entity,
         intel: TeamIntel,
         actions: List[Action],
-        cfg: CompactFormatterConfig,
+        cfg: StateFormatterConfig,
     ) -> List[str]:
         lines: List[str] = []
         unit_label = getattr(entity.kind, "name", str(entity.kind))
@@ -796,7 +796,7 @@ class CompactStateFormatter:
         return lines
 
     def _terminology_lines(self) -> List[str]:
-        """Reusable legend to keep unit sections compact but unambiguous."""
+        """Reusable legend to keep unit sections concise but unambiguous."""
         return [
             "- **Terminology:**",
             "  - **rel=<DIR> (dx, dy, dist):** direction and offsets from this unit; x: left-/right+, y: down-/up+; dist=straight-line (grid cells).",
@@ -816,7 +816,7 @@ class CompactStateFormatter:
         self,
         entity,
         intel: TeamIntel,
-        cfg: CompactFormatterConfig,
+        cfg: StateFormatterConfig,
     ) -> List[Dict[str, Any]]:
         allies: List[Dict[str, Any]] = []
         for other in intel.friendlies:
@@ -850,7 +850,7 @@ class CompactStateFormatter:
         self,
         entity,
         intel: TeamIntel,
-        cfg: CompactFormatterConfig,
+        cfg: StateFormatterConfig,
     ) -> Dict[str, Any]:
         detected: List[Dict[str, Any]] = []
         for enemy in intel.visible_enemies:
@@ -900,7 +900,7 @@ class CompactStateFormatter:
         enemy: VisibleEnemy,
         intel: TeamIntel,
         distance: float,
-        cfg: CompactFormatterConfig,
+        cfg: StateFormatterConfig,
     ) -> Optional[Dict[str, Any]]:
         shoot_state = self._shoot_state(entity)
         if not shoot_state["can_shoot_now"]:
@@ -922,7 +922,7 @@ class CompactStateFormatter:
         self,
         enemy: VisibleEnemy,
         distance: float,
-        cfg: CompactFormatterConfig,
+        cfg: StateFormatterConfig,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str], Optional[float]]:
         profile = self._get_enemy_profile(enemy.kind, cfg)
         if profile.max_range <= 0:
@@ -991,7 +991,7 @@ class CompactStateFormatter:
 
         return state
 
-    def _get_enemy_profile(self, kind: EntityKind, cfg: CompactFormatterConfig) -> WeaponProfile:
+    def _get_enemy_profile(self, kind: EntityKind, cfg: StateFormatterConfig) -> WeaponProfile:
         return cfg.enemy_weapon_profiles.get(kind, cfg.fallback_enemy_weapon_profile)
 
     def _get_cardinal_direction(self, dx: float, dy: float) -> str:
@@ -1062,7 +1062,7 @@ class CompactStateFormatter:
     def _distant_enemies(
         self,
         intel: TeamIntel,
-        cfg: CompactFormatterConfig,
+        cfg: StateFormatterConfig,
     ) -> List[Dict[str, Any]]:
         distant: List[Dict[str, Any]] = []
         friendly_positions = [e.pos for e in intel.friendlies if e.alive]

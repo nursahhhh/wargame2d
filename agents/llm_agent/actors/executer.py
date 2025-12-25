@@ -1,12 +1,13 @@
-import json
-from typing import Literal, Union, List, Annotated
-
+from typing import List, Literal, Union, Optional, Dict, Annotated, Any
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
+from pydantic_ai.models.openrouter import OpenRouterModelSettings
 
 from agents.llm_agent.actors.game_deps import GameDeps
 from agents.llm_agent.prompts.game_info import GAME_INFO
-from agents.llm_agent.prompts.tactics import TACTICAL_GUIDE
+
+load_dotenv()
 
 
 # --- Action definitions ---
@@ -39,87 +40,133 @@ class ToggleAction(BaseModel):
     on: bool = Field(description="True to activate, False to deactivate")
 
 
-Action = Annotated[
-    Union[MoveAction, ShootAction, WaitAction, ToggleAction],
-    Field(discriminator="type"),
-]
+Action = Annotated[Union[MoveAction, ShootAction, WaitAction, ToggleAction], Field(discriminator="type")]
 
 
-# --- Entity-level reasoning wrapper ---
 class EntityAction(BaseModel):
     """A single unit's action with tactical justification."""
     reasoning: str = Field(
-        description="Brief tactical rationale for this action aligned to current phase and role."
+        description="Brief rationale clearly justifying why this action is chosen for this unit"
     )
     action: Action = Field(description="The action this unit will execute")
 
 
-class TeamAction(BaseModel):
+class TeamTurnPlan(BaseModel):
     """Complete turn plan with per-unit actions."""
     analysis: str = Field(
-        description=(
-            "Concise rationale tying chosen actions to the current phase objective and roles. "
-            "Do not restate the full game rules."
-        )
+        description="Detailed step by step action-oriented analysis explaining key priorities for this turn. Carefully examine current situation, "
+                    "enemy strategy, our strategy, inferred enemy actions and ally action implications, and decide best actions accordingly."
     )
     entity_actions: List[EntityAction] = Field(
-        description="Ordered list of actions for each controllable unit, with reasoning"
+        description="Ordered list of actions for each controllable unit, with justification"
     )
 
 
-# --- System prompt template ---
-EXECUTER_SYSTEM_PROMPT = f"""
-You are the Execution Commander. Your purpose is to convert the strategist's current plan into concrete actions for each friendly unit this turn.
-Your job is to pick the best action for each unit considering the current game state, the strategist's current phase objective and each unit's assigned role."""
+def _format_strategy(deps: GameDeps) -> str:
+    if not deps.strategy_plan:
+        return "No strategy provided yet."
+    return deps.strategy_plan.to_text(include_analysis=False, include_callbacks=False)
+
+def _format_entity_notes(entries: Dict[Any, Any]) -> str:
+    if not entries:
+        return "- None."
+    lines: List[str] = []
+    for entity_id in sorted(entries.keys(), key=lambda k: int(k) if str(k).isdigit() else str(k)):
+        raw = str(entries.get(entity_id, "")).strip()
+        text = " ".join(raw.split()) if raw else "(none)"
+        lines.append(f"- #{entity_id}: {text}")
+    return "\n".join(lines)
 
 
-# --- Agent definition ---
-player = Agent(
-    "openrouter:deepseek/deepseek-v3.1-terminus:exacto",
-    # model_settings=ModelSettings(
-    #     temperature=0.7,
-    #     top_p=0.8,
-    #     max_tokens=32_000,
-    #     extra_body={
-    #         "top_k": 20,
-    #         "min_p": 0,
-    #         "repetition_penalty": 1.05,
-    #     }
-    # ),
-    retries=3,
+def _latest_analyst(deps: GameDeps) -> Dict[str, Any]:
+    if not deps.analyst_history:
+        return {
+            "analysis": "None yet.",
+            "highlights": [],
+            "action_implications": {},
+            "action_inferences": {},
+        }
+    latest_turn = max(deps.analyst_history.keys())
+    latest = deps.analyst_history[latest_turn]
+    return {
+        "analysis": latest.analysis or "None provided.",
+        "highlights": latest.key_points_for_executor or [],
+        "action_implications": latest.action_implications or {},
+        "action_inferences": latest.action_inferences or {},
+    }
+
+
+EXECUTER_COMPACT_PROMPT = f"""
+# ROLE
+You are the Executer Agent. Read & analyse "strategist" and "analyst" insights carefully, then take legal actions for this turn.
+But you have free will to micro-deviate from the plan if the current state demands it. Analyse & decide for yourself to win. You have the field control & responsibility.
+Strategist & analyst doesn't see the full state, you do. You are the final decision maker.
+
+---
+
+# TASK
+- Read the current strategy and unit roles, plus the analyst's latest notes.
+- Pick one action per friendly unit using only legal actions implied by the current state.
+- If uncertain or no good move exists, WAIT is acceptable.
+
+---
+
+# GAME INFO
+{GAME_INFO}
+"""
+## RESPONSE FORMAT
+#Respond with a tool call to 'final_result' with TeamTurnPlan.
+#DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
+
+
+executer_agent = Agent[GameDeps, TeamTurnPlan](
+    "openrouter:x-ai/grok-4.1-fast",#"openrouter:deepseek/deepseek-v3.1-terminus:exacto",
+    deps_type=GameDeps,
+    output_type=TeamTurnPlan,
+    model_settings=OpenRouterModelSettings(
+        max_tokens=1024 * 16,
+        openrouter_reasoning={"effort": "medium", "enabled":True},
+    ),
+    instructions=EXECUTER_COMPACT_PROMPT,
     output_retries=3,
-    output_type=TeamAction,
-    instructions=EXECUTER_SYSTEM_PROMPT,
 )
 
 
-@player.instructions
-def execution_instructions(ctx: RunContext[GameDeps]) -> str:
-    deps = ctx.deps or GameDeps()
+@executer_agent.instructions
+def full_prompt(ctx: RunContext[GameDeps]) -> str:
+    deps = ctx.deps
 
-    strategy_json = (
-        json.dumps(deps.current_phase_strategy, indent=2, ensure_ascii=False)
-        if deps.current_phase_strategy
-        else "No current phase strategy."
-    )
+    strategy_text = _format_strategy(deps)
+    analyst = _latest_analyst(deps)
+    highlights = "\n".join(f"- {h}" for h in analyst["highlights"]) if analyst["highlights"] else "- None."
 
-    roles = (
-        "\n".join(f"- Unit {unit_id}: {role}" for unit_id, role in deps.entity_roles.items())
-        if deps.entity_roles
-        else "- No explicit roles provided."
-    )
+    return f"""---
 
-    return f"""
-## CURRENT STRATEGY
-{strategy_json}
+# STRATEGIST TELLS:
+{strategy_text}
 
-### ROLES THIS PHASE
-{roles}
+---
 
-Game rules are provided below. 
-## GAME RULES
-{GAME_INFO}
+# ANALYST TELLS:
+Analysis: 
+{analyst['analysis']}
 
-## RESPONSE FORMAT
-Output the TeamAction schema only. Avoid narration outside the schema.
+Action Inferences:
+{_format_entity_notes(analyst['action_inferences'])}
+
+Action Implications:
+{_format_entity_notes(analyst['action_implications'])}
+
+Key points for executor:
+{highlights}
+
+---
+
+# CURRENT GAME STATE
+{deps.current_state}
+
 """
+
+# DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
+# RESPONSE FORMAT
+# Return a tool call to 'final_result' with TeamTurnPlan.

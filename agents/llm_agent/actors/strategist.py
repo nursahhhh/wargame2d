@@ -1,8 +1,7 @@
-from typing import List, Literal
-
+from typing import List
 from dotenv import load_dotenv
-from pydantic_ai import Agent
 from pydantic import BaseModel, Field
+from pydantic_ai import Agent
 from pydantic_ai.models.openrouter import OpenRouterModelSettings
 
 from agents.llm_agent.actors.game_deps import GameDeps
@@ -12,86 +11,111 @@ from agents.llm_agent.prompts.tactics import TACTICAL_GUIDE
 load_dotenv()
 
 
-class PhaseOutline(BaseModel):
-    name: str = Field(
-        description="Short label for the phase (e.g., 'Phase 1: Secure radar net')."
-    )
-    goal: str = Field(
-        description="One-sentence objective for this phase, no execution detail."
-    )
-
-
-class CurrentPhasePlan(BaseModel):
-    phase: str = Field(description="Name/number of the active phase.")
-    objective: str = Field(
-        description="High-level intent of the active phase in one sentence."
-    )
-    guidance: List[str] = Field(
-        description=(
-            "3-6 concise bullet points outlining the intended operational approach "
-            "for this phase. Tactical guidance only-avoid unit-level orders."
-        )
-    )
-
-
-class RoleAssignment(BaseModel):
+class UnitStrategy(BaseModel):
     entity_id: int = Field(description="Friendly unit id.")
+    #role: str = Field(description="One-sentence role/priority for this unit aligned to the plan cite the specific context justifying this role.")
+    #role: str = Field(description="Pseudo-code like clear, well formatted, well structured roles & directives for this entity to execute the current strategy. Avoid using exact fire probability thresholds.")
     role: str = Field(
-        description="Single-sentence role for this unit for the current phase."
-    )
+        description="Clear, well formatted high-level roles&directives for this entity to execute the current strategy.")
+
+class StrategyOutput(BaseModel):
+    # analysis: str = Field(
+    #     description="Detailed analysis of current state. For each point, cite the specific context facts that led to your conclusion and explain your reasoning."
+    # )
+    analysis: str = Field(description="Step-by-step analysis of current state overview, game stage, enemy's strategy, potential threats & opportunities")
+    strategy: str = Field(description="Clear well structured, short-term gameplan to win as a team with justifications.")
+    unit_strategies: List[UnitStrategy] = Field(description="Per-unit roles and postures for all alive friendlies.")
+    call_me_back_if: List[str] = Field(description="Observable re-strategize triggers (concise conditions). Re-strategizing is costly, so only include critical triggers.")
+
+    def to_text(self, include_analysis: bool = True, include_callbacks: bool = True) -> str:
+        """
+        Render a human-friendly string summary of the strategy output.
+
+        Args:
+            include_analysis: Whether to include the analysis section at the top.
+            include_callbacks: Whether to include the call_me_back_if section.
+        """
+        lines: List[str] = []
+        if include_analysis:
+            lines.append("ANALYSIS")
+            lines.append(self.analysis.strip())
+            lines.append("")
+
+        lines.append("TEAM STRATEGY")
+        lines.append(self.strategy.strip())
+        lines.append("")
+
+        lines.append("UNIT STRATEGIES")
+        for us in self.unit_strategies:
+            lines.append(f"- #{us.entity_id}: {us.role.strip()}")
+        lines.append("")
+
+        if include_callbacks:
+            lines.append("CALL ME BACK IF")
+            for cond in self.call_me_back_if:
+                lines.append(f"- {cond.strip()}")
+            lines.append("")
+
+        return "\n".join(lines).strip()
 
 
-class GamePlan(BaseModel):
-    multi_phase_plan: List[PhaseOutline] = Field(
-        description="2-4 phase outline covering the path to victory. Keep each goal concise."
-    )
-    current_phase_plan: CurrentPhasePlan = Field(
-        description="Operational guidance for the active phase without unit-level orders."
-    )
-    roles: List[RoleAssignment] = Field(
-        description="Role per friendly unit (one sentence each) aligned to the current phase."
-    )
-    callbacks: List[str] = Field(
-        description=(
-            "Specific observable conditions that should trigger a strategist callback."
-        )
-    )
+STRATEGIST_COMPACT_PROMPT = f"""
+# ROLE
+You are the Strategist for a team on a 2D combat grid game.
 
+---
 
-STRATEGIST_SYSTEM_PROMPT = f"""
-You are the Strategic Director for a 2D combat grid game. The user message contains the latest analysis and state snapshot. Your job is to translate it into a concise, multi-phase plan the execution agent can follow.
+# YOUR TASK
+Analyze the current game rules and tactical guides carefully. Identify the key strategies which would carry you to a victory. Then, develop a short-term strategic plan that covers:
 
-Use the GAME INFO and TACTICAL GUIDE as doctrine. 
+1. A team-wide short-term strategy describing how the team should operate currently to achieve victory.
 
+2. Individual unit directives for each alive entity (e.g., AWACS, Aircraft, SAM, Decoy) that define their current roles, priorities, coordination patterns and how should they behave in high-level generalized manner.
+
+3. Clear re-strategize triggers: Define well-defined conditions that would invalidate (unexpected or expected next-phase transition) the current plan and require a new strategy.
+
+Act as a strategic director, not a field commander — focus on high-level, enduring strategy rather direct micro decisions. 
+
+---
+
+# REFERENCES
 ## GAME INFO
 {GAME_INFO}
 
 ## TACTICAL GUIDE
 {TACTICAL_GUIDE}
 
-## WHAT TO PRODUCE
-- Multi-phase outline: 2-4 succinct phases from now to victory; no action detail.
-- Current phase plan: Name + objective + 3-6 guidance bullets (operational intent, not per-unit orders).
-- Roles: One-sentence objective per friendly unit id for this phase.
-- Callback conditions: List specific observable triggers. Keep each condition terse and clear.
+---
 
-## RESPONSE FORMAT
-Always response with tool properly formatted tool call ('final_result') using the GamePlan schema.
-
-Stay concise, emphasize clarity, avoid jargon, and never output executable action commands.
+# OUTPUT
+## EXPECTED OUTPUT (StrategyOutput)
+- analysis: concise take on state (threats, advantages, constraints).
+- strategy: team-level short-term gameplan (no micro orders).
+- unit_strategies: per-unit role + posture for each alive friendly.
+- call_me_back_if: observable, concise triggers to re-strategize.
 """
 
+# """
+# # OUTPUT
+# ## EXPECTED OUTPUT (StrategyOutput)
+# - analysis: concise take on state (threats, advantages, constraints).
+# - strategy: team-level short-term gameplan (no micro orders).
+# - unit_strategies: per-unit role + posture for each alive friendly.
+# - call_me_back_if: observable, concise triggers to re-strategize.
+# """
 
-strategist_agent = Agent(
-    "openrouter:deepseek/deepseek-v3.1-terminus:exacto",
-    model_settings=OpenRouterModelSettings(
-        # temperature=0.7,
-        # top_p=0.8,
-        max_tokens=1024 * 32,
-        openrouter_reasoning={"effort": "low"},
-    ),
+# ## RESPONSE FORMAT
+# Return a tool call to 'final_result' using the StrategyOutput schema.
+#DO NOT: Call 'final_result' with a placeholder text like "arguments_final_result".
+
+strategist_agent = Agent[GameDeps, StrategyOutput](
+    "openrouter:x-ai/grok-4.1-fast", #"openrouter:deepseek/deepseek-v3.1-terminus:exacto",
     deps_type=GameDeps,
-    output_type=GamePlan,
-    instructions=STRATEGIST_SYSTEM_PROMPT,
-    output_retries=3,
+    output_type=StrategyOutput,           
+    model_settings=OpenRouterModelSettings(
+        max_tokens=1024 * 32,
+        openrouter_reasoning={"effort": "high", "exclude":False, "enabled":True},
+    ),
+    instructions=STRATEGIST_COMPACT_PROMPT,
+    output_retries=3,                      
 )
