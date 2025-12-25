@@ -1,6 +1,4 @@
 from typing import List, Literal, Union, Optional, Dict, Annotated, Any
-
-import json
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
@@ -56,8 +54,8 @@ class EntityAction(BaseModel):
 class TeamTurnPlan(BaseModel):
     """Complete turn plan with per-unit actions."""
     analysis: str = Field(
-        description="Detailed step by step action-oriented analysis explaining key priorities for this turn. Focus on current situation, "
-                    "enemy strategy & our strategy, and action implications"
+        description="Detailed step by step action-oriented analysis explaining key priorities for this turn. Carefully examine current situation, "
+                    "enemy strategy, our strategy, inferred enemy actions and ally action implications, and decide best actions accordingly."
     )
     entity_actions: List[EntityAction] = Field(
         description="Ordered list of actions for each controllable unit, with justification"
@@ -69,22 +67,38 @@ def _format_strategy(deps: GameDeps) -> str:
         return "No strategy provided yet."
     return deps.strategy_plan.to_text(include_analysis=False, include_callbacks=False)
 
+def _format_entity_notes(entries: Dict[Any, Any]) -> str:
+    if not entries:
+        return "- None."
+    lines: List[str] = []
+    for entity_id in sorted(entries.keys(), key=lambda k: int(k) if str(k).isdigit() else str(k)):
+        raw = str(entries.get(entity_id, "")).strip()
+        text = " ".join(raw.split()) if raw else "(none)"
+        lines.append(f"- #{entity_id}: {text}")
+    return "\n".join(lines)
+
 
 def _latest_analyst(deps: GameDeps) -> Dict[str, Any]:
     if not deps.analyst_history:
-        return {"analysis": "None yet.", "highlights": [], "action_implications": {}}
+        return {
+            "analysis": "None yet.",
+            "highlights": [],
+            "action_implications": {},
+            "action_inferences": {},
+        }
     latest_turn = max(deps.analyst_history.keys())
     latest = deps.analyst_history[latest_turn]
     return {
         "analysis": latest.analysis or "None provided.",
         "highlights": latest.key_points_for_executor or [],
         "action_implications": latest.action_implications or {},
+        "action_inferences": latest.action_inferences or {},
     }
 
 
 EXECUTER_COMPACT_PROMPT = f"""
 # ROLE
-You are the Executer Agent. Convert the "strategist"'s plan and "analyst" highlights into concrete, legal actions for this turn only.
+You are the Executer Agent. Read & analyse "strategist" and "analyst" insights carefully, then take legal actions for this turn.
 But you have free will to micro-deviate from the plan if the current state demands it. Analyse & decide for yourself to win. You have the field control & responsibility.
 Strategist & analyst doesn't see the full state, you do. You are the final decision maker.
 
@@ -99,7 +113,6 @@ Strategist & analyst doesn't see the full state, you do. You are the final decis
 
 # GAME INFO
 {GAME_INFO}
-
 """
 ## RESPONSE FORMAT
 #Respond with a tool call to 'final_result' with TeamTurnPlan.
@@ -127,7 +140,8 @@ def full_prompt(ctx: RunContext[GameDeps]) -> str:
     analyst = _latest_analyst(deps)
     highlights = "\n".join(f"- {h}" for h in analyst["highlights"]) if analyst["highlights"] else "- None."
 
-    return f"""
+    return f"""---
+
 # STRATEGIST TELLS:
 {strategy_text}
 
@@ -137,8 +151,11 @@ def full_prompt(ctx: RunContext[GameDeps]) -> str:
 Analysis: 
 {analyst['analysis']}
 
+Action Inferences:
+{_format_entity_notes(analyst['action_inferences'])}
+
 Action Implications:
-{json.dumps(analyst['action_implications'], indent=2, ensure_ascii=False, default=str)}
+{_format_entity_notes(analyst['action_implications'])}
 
 Key points for executor:
 {highlights}

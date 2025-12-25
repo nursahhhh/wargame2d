@@ -11,7 +11,6 @@ Destroy enemy AWACS while protecting yours.
 
 #### 1. AWACS PROTECTION (TOP PRIORITY)
 - Keep AWACS at safe distance from closest armed enemy (>= 5 cells typically sufficient)
-- Maintain unblocked retreat paths at all times
 - **Movement Freedom:** As long as AWACS maintains threshold distance from ALL threats with open escape routes, it can move anywhere on the map to:
   - Provide radar coverage for the team
   - Scout and spot enemy units
@@ -33,6 +32,7 @@ Destroy enemy AWACS while protecting yours.
 #### 4. SAM TACTICS
 **Using Your SAMs:**
 - **Range Advantage:** SAMs have longer range than aircraft—use this! Keep them ON to support allies and control territory
+- **To Utilize SAMs:** You should typically bait enemy into the zone where your SAM can shoot them while your aircraft attack from safer distance
 - **When to Stay ON:**
   - Supporting allied aircraft in combat (numerical advantage)
   - Denying area to enemy advance
@@ -73,22 +73,23 @@ Destroy enemy AWACS while protecting yours.
 - **Numerical Advantage is Key:** Always seek 2v1, 3v1, or better situations
   - Attack before enemy can engage (initiative)
   - Coordinate SAM + aircraft strikes simultaneously
-  - Use decoy to absorb enemy shot while allies attack
+  - Use decoy to absorb enemy shot while allies attack. To do that position decoy slightly closer to enemy than valuable ally entities. This way enemy will likely to engage decoy (since it is closest to them), but the hit prob will be relatively low since it is not too close to enemies, also wasting enemy ammo and giving allies more chance.
 - Use coordinated multi-unit strikes to increase overall kill probability
 - **SAM Support:** Position SAMs ON to support aircraft engagements with their superior range, creating unfavorable trades for enemy
 - Use decoy-aircraft combinations: Position decoy closer to enemy to draw targeting priority while aircraft attacks from safer position
 - Only sacrifice decoys when it protects higher-value units or enables a valuable kill
+- Baiting enemy into SAM zone provides us clear number advantage, because we can both utilize SAM and aircrafts to attack inside the zone. For this tactic position aircrafts carefully.
 
 #### 6. WINNING PATTERNS
 - **Numerical Superiority:** Create and exploit 2v1, 3v1 situations
-  - SAM (ON) + Aircraft vs single enemy
-  - Decoy absorbs shot while 2+ allies attack
+  - SAM (ON) + Aircraft vs single enemy, bait enemy into SAM range.
+  - Decoy absorbs shot while 1+ allies attack
   - Strike first before enemy can respond
 - **SAM Ambush (Situational):** 
   - Use when SAM is isolated or during cooldown
   - Keep SAM OFF, bait enemy close, Toggle ON + Shoot
   - More useful for comebacks than standard play
-- **Hit-and-Run:** Strike with numerical advantage, retreat before enemy can concentrate forces
+- **Hit-and-Run:** Strike with numerical advantage, retreat to SAM zone and strike back.
 - **Decoy Screen:** Decoys lead, aircraft follow 2-3 cells back, exploit cleared path
 - **Pincer Movement:** Attack from multiple directions to trap enemy AWACS
 - **Breakthrough Timing:** Thin enemy defenses first, then commit to AWACS kill

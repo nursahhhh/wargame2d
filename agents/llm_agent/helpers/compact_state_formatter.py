@@ -244,9 +244,9 @@ class CompactStateFormatter:
         if unit_sections:
             lines.append("")
             lines.append("#### Ally Units & Options")
-            lines.extend(self._terminology_lines())
-            lines.append("")  # Spacer after terminology for readability
             lines.extend(unit_sections)
+            lines.append("")  # Spacer after terminology for readability
+            lines.extend(self._terminology_lines())
 
         distant = self._distant_enemies(intel, self.config)
         if distant:
@@ -690,10 +690,15 @@ class CompactStateFormatter:
                 threat_type = threat.get("threat_type") or "UNKNOWN"
                 desc_parts = [
                     f"risk={risk_level} threat={threat_type} Enemy #{threat['enemy_id']} {threat['type']}",
-                    f"rel={rel['direction']} (dx={rel['dx']}, dy={rel['dy']}, dist={rel['distance']})",
                 ]
-                if threat.get("has_fired_before"):
-                    desc_parts.append("confirmed shooter")
+                if threat.get("type") == "AIRCRAFT":
+                    if threat.get("has_fired_before"):
+                        desc_parts.append("is_decoy=no (confirmed shooter)")
+                    else:
+                        desc_parts.append("is_decoy=possible (unconfirmed)")
+                desc_parts.append(
+                    f"rel={rel['direction']} (dx={rel['dx']}, dy={rel['dy']}, dist={rel['distance']})"
+                )
                 if threat.get("threat_type") == "UNARMED":
                     desc_parts.append("cannot shoot")
                 if threat.get("our_engagement"):
@@ -798,7 +803,7 @@ class CompactStateFormatter:
             "  - **Risk/threat:** DANGER=can shoot; CAUTION=almost in range; SAFE=out of range; UNARMED=cannot shoot.",
             "  - **closest_ally_dist:** straight-line distance from that enemy to the nearest friendly (grid cells).",
             "  - **Safe margin:** cells we are outside the enemy's assumed max range (armed enemies only).",
-            "  - **Confirmed shooter:** has fired before, so not a decoy.",
+            "  - **is_decoy (aircraft only):** no = has fired before; possible = not confirmed yet.",
             "  - **our_hit / enemy_hit:** estimated hit probability if we shoot them now / if they shoot us now.",
             "  - **out_of_range_by:** how many cells we are short of our own weapon range for that target.",
             "  - **Move collisions:** cells multiple allies could move into next turn (avoid duplicate selection).",

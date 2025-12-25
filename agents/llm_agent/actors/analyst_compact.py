@@ -17,12 +17,13 @@ load_dotenv()
 
 class AnalystCompactOutput(BaseModel):
     analysis: str = Field(
-        description="Detailed analysis and narration of the board state, consisting of the "
+        description="Detailed analysis and narration of the current state, consisting of the "
                     "\nGame Overview: Provide a brief overview of the current situation"
                     "\nCurrent Game Stage: Determine the stage of the game based on the information. Is it the early game, mid-game, or late game?"
                     "\nOur Situation: Describe our current status"
                     "\nOur Strategy:  Examine our current strategy and its effectiveness."
                     "\nEnemy's Strategy: Infer the enemy’s potential strategy, based on the available information"
+                    "\nEnemy Targeting Analysis: Identify the most likely target for each visible armed enemy unit based on distance. Specify which of our units are in immediate danger and from which enemies, enabling strategic repositioning to control enemy aggro patterns."
                     "\nKey Information: Highlight any critical information that could impact decision-making, such as threats, opportunities, or resource status."
                     "\nDo not recommend direct actions."
     )
@@ -222,15 +223,14 @@ analyst_compact_agent = Agent[GameDeps, AnalystCompactOutput](
 
 
 ANALYST_TASK = """
-Your job is to read, carefully and objectively analyse the current game status along with history of events, logs, 
-and the current game strategy (created by the strategist agent), and convert it to a well explained clear, concise analysis 
-telling what is going on the game board verbally for the 'executer agent' who is responsible to take concrete actions.
+Your job is to read, carefully and objectively analyse the current game status along with history of events, logs, and the current game strategy (created by the strategist agent), 
+and convert it to a well explained clear, concise analysis telling what is going on the game board verbally for the 'executer agent' who is responsible to take concrete actions.
 
 Field executer will read your analysis after each turn to before taking actions. You can highlight key-points 
 inside your analysis to the 'executer agent' to make winning easier for him.
 
 - After each turn along with your analysis you can optionally record some key events/facts for future-self (they are only seen by you), like killed entities, fired missiles, anything you seem could be relevant for your future-self to better understand the history. Think of them like history notes.
-- You will given the current strategy along with some re-strategize conditions by the 'strategy directory' specifying you when it is the time to re-plan. Other than that, you are free to decide when to re-plan if you think the current strategy is invalidated or obsolete (a good reason is inferred enemy strategy potentially disrupting ours). Or it has been 10 turns since last re-plan.
+- You will be given the current strategy along with some re-strategize conditions by the 'strategist    ' specifying you when it is the time to re-plan. Other than that, you are free to decide when to re-plan if you think the current strategy is invalidated or obsolete (a good reason is inferred enemy strategy potentially disrupting ours). Or it has been 10 turns since last re-plan.
 - Thus you are responsible to take a 're-strategize' decision based on your analysis. It might mean current strategy phase is over either because it was successful or it was a failure and we need a new plan for the next phase.
 - Keep it clear and concise.
 """
