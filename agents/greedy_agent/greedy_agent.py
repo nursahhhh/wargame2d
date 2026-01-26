@@ -32,7 +32,7 @@ class GreedyAgent(BaseAgent):
         team: Team,
         name: str | None = None,
         *,
-        patrol_direction: str | MoveDir = "right",
+        patrol_direction: str | MoveDir = "left",
         shoot_prob: float = 0.1,
         awacs_safe_distance: float = 5.0,
         **_: Any,

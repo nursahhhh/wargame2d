@@ -10,24 +10,63 @@ Destroy enemy AWACS while protecting yours.
 ### CORE PRINCIPLES
 
 #### 1. AWACS PROTECTION (TOP PRIORITY)
-- Keep AWACS at safe distance from closest armed enemy (>= 5 cells typically sufficient)
-- **Movement Freedom:** As long as AWACS maintains threshold distance from ALL threats with open escape routes, it can move anywhere on the map to:
-  - Provide radar coverage for the team
-  - Scout and spot enemy units
-  - Reposition for better battlefield awareness
-- Don't keep AWACS static if it's already safe—use its mobility and radar actively
+- **Primary Safety Rule:**
+  - AWACS must avoid entering enemy radar coverage at all times.
+  - AWACS radar range is superior to aircraft radar; proximity to threats is unnecessary.
+  - If enemy radar can currently detect AWACS, AWACS is in immediate danger.
 
-#### 2. TARGET PRIORITY
-1. Enemy AWACS (if accessible - game-winning)
-2. Enemy aircraft threatening your AWACS
-3. Enemy SAMs blocking your advance path
-4. Enemy decoys (LOWEST - avoid wasting ammunition)
+- **Radar each Closure Rule (Hard Rule):**
+  - Any AWACS position that can be entered into enemy radar range by a single normal enemy movement is considered ALREADY UNSAFE.
+  - There is NO safe buffer near radar boundaries.
+  - Moves that reduce radar seperation to a single enemy radar detection.
 
-#### 3. DISTANCE CONTROL & AMMUNITION ECONOMY
-- **Control engagement distance:** Stay outside enemy weapon range when not attacking; close distance to engage
-- Fire at closer range for higher hit probability (distance determines hit chance)
-- Coordinate multi-unit strikes when possible
-- Each shot counts especially when we have low ammo left, take closer shots when ammo is limited.
+- **Adversarial RAdar Consraint (HARD RULE):**
+  - AWACS must NOT select any move that allows enemy radar detection assuming optimal enemy movement on the next turn.
+  - A move that is safe now but unsafe after enemy response is FORBIDDEN.
+
+
+- **Radar Edge Behavior:**
+  - When operating near enemy radar boundary:
+    - Prefer backward or lateral moves that increase separation from enemy radar origin.
+    - Avoid perpendicular moves (e.g., UP/DOWN) that preserve radar proximity
+      or allow detection after enemy movement.
+    - A move must STRICTLY improve radar safety to be considered valid.
+
+- **WAIT Preference Rule:**
+  - If all movement options result in equal or higher radar risk, WAIT is preferred over movement.
+  - Do NOT move AWACS unless the move strictly increases radar seperation robustness.
+
+- **Movement Freedom:**
+  - As long as AWACS remains outside enemy radar reach
+    and outside all 1-step interception paths, it may move freely to:
+      - Maintain wide radar coverage
+      - Support allied aircraft and SAM positioning
+      - Enable strategic awareness across the map
+  - Movement must always keep AWACS behind friendly combat-capable units.
+
+- **Threat-Based Positioning (No Fixed Distances):**
+  - Do NOT rely on fixed distance thresholds.
+  - Evaluate safety based on whether enemy units could detect AWACS
+    with radar by advancing normally.
+  - If such detection is possible, immediately reposition AWACS away from that vector.
+
+- **Detection Override Rule:**
+  - If AWACS is detected by enemy radar:
+    - Ignore coverage, alignment, or strategic positioning goals.
+    - Select the move that maximizes radar separation immediately.
+    - Do NOT choose moves that preserve radar boundary proximity.
+
+- **Layered Protection Principle:**
+  - Aircraft, decoys, and SAMs must form forward detection and engagement layers.
+  - AWACS must always remain behind these layers.
+  - If any enemy aircraft is closer to AWACS than to friendly combat units,
+    AWACS positioning is invalid and must be corrected.
+
+- **Emergency Behavior:**
+  - If AWACS is threatened or detection is imminent:
+    - Abort offensive plans
+    - Reposition using maximum radar separation logic
+    - Use decoys or aircraft to screen or delay enemy advance
 
 #### 4. SAM TACTICS
 **Using Your SAMs:**

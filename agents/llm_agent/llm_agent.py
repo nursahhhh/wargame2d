@@ -142,7 +142,7 @@ class LLMAgent(BaseAgent):
             "analyst_error": analyst_error,
         }
 
-        print(state_text)
+        #print(state_text)
         print("\n" + "=" * 80 + "\n")
         return actions, metadata
 
