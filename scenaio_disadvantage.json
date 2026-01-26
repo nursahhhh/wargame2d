@@ -1,0 +1,193 @@
+{
+  "config": {
+    "grid_width": 30,
+    "grid_height": 15,
+    "max_stalemate_turns": 60,
+    "max_no_move_turns": 100,
+    "max_turns": 40,
+    "check_missile_exhaustion": true,
+    "seed": 42
+  },
+  "entities": [
+    {
+      "type": "AWACS",
+      "id": 1,
+      "team": "BLUE",
+      "pos": [
+        0,
+        0
+      ],
+      "kind": "awacs",
+      "name": null,
+      "alive": true,
+      "radar_range": 9,
+      "can_move": true,
+      "can_shoot": false
+    },
+    
+    {
+      "type": "Aircraft",
+      "id": 3,
+      "team": "BLUE",
+      "pos": [
+        3,
+        9
+      ],
+      "kind": "aircraft",
+      "name": null,
+      "alive": true,
+      "radar_range": 5,
+      "can_move": true,
+      "can_shoot": true,
+      "missiles": 4,
+      "missile_max_range": 4,
+      "base_hit_prob": 0.8,
+      "min_hit_prob": 0.1
+    },
+    {
+      "type": "SAM",
+      "id": 4,
+      "team": "BLUE",
+      "pos": [
+        0,
+        6
+      ],
+      "kind": "sam",
+      "name": null,
+      "alive": true,
+      "radar_range": 8,
+      "can_move": false,
+      "can_shoot": true,
+      "missiles": 6,
+      "missile_max_range": 6,
+      "base_hit_prob": 0.8,
+      "min_hit_prob": 0.1,
+      "on": true,
+      "cooldown_steps": 5,
+      "_cooldown": 0
+    },
+    {
+      "type": "AWACS",
+      "id": 5,
+      "team": "RED",
+      "pos": [
+        19,
+        0
+      ],
+      "kind": "awacs",
+      "name": null,
+      "alive": true,
+      "radar_range": 9,
+      "can_move": true,
+      "can_shoot": false
+    },
+    {
+      "type": "Aircraft",
+      "id": 6,
+      "team": "RED",
+      "pos": [
+        16,
+        9
+      ],
+      "kind": "aircraft",
+      "name": null,
+      "alive": true,
+      "radar_range": 5,
+      "can_move": true,
+      "can_shoot": true,
+      "missiles": 4,
+      "missile_max_range": 4,
+      "base_hit_prob": 0.8,
+      "min_hit_prob": 0.1
+    },
+ {
+      "type": "Aircraft",
+      "id": 10,
+      "team": "RED",
+      "pos": [
+        14,
+        6
+      ],
+      "kind": "aircraft",
+      "name": null,
+      "alive": true,
+      "radar_range": 5,
+      "can_move": true,
+      "can_shoot": true,
+      "missiles": 4,
+      "missile_max_range": 4,
+      "base_hit_prob": 0.8,
+      "min_hit_prob": 0.1
+    },
+    {
+      "type": "Aircraft",
+      "id": 7,
+      "team": "RED",
+      "pos": [
+        16,
+        3
+      ],
+      "kind": "aircraft",
+      "name": null,
+      "alive": true,
+      "radar_range": 5,
+      "can_move": true,
+      "can_shoot": true,
+      "missiles": 4,
+      "missile_max_range": 4,
+      "base_hit_prob": 0.8,
+      "min_hit_prob": 0.1
+    },
+    {
+      "type": "Decoy",
+      "id": 8,
+      "team": "RED",
+      "pos": [
+        16,
+        6
+      ],
+      "kind": "decoy",
+      "name": null,
+      "alive": true,
+      "radar_range": 0,
+      "can_move": true,
+      "can_shoot": false
+    },
+    {
+      "type": "SAM",
+      "id": 9,
+      "team": "RED",
+      "pos": [
+        19,
+        6
+      ],
+      "kind": "sam",
+      "name": null,
+      "alive": true,
+      "radar_range": 8,
+      "can_move": false,
+      "can_shoot": true,
+      "missiles": 6,
+      "missile_max_range": 6,
+      "base_hit_prob": 0.8,
+      "min_hit_prob": 0.1,
+      "on": false,
+      "cooldown_steps": 5,
+      "_cooldown": 0
+    }
+  ],
+  "agents": [
+    {
+      "type": "llm_basic",
+      "team": "BLUE",
+      "name": "Blue Random Agent",
+      "init_params": {}
+    },
+    {
+      "type": "greedy",
+      "team": "RED",
+      "name": "Red Random Agent",
+      "init_params": {}
+    }
+  ]
+}
