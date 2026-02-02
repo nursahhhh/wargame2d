@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.openrouter import OpenRouterModelSettings
-
+import os 
 from agents.llm_agent.actors.game_deps import GameDeps
 from agents.llm_agent.prompts.game_info import GAME_INFO
 

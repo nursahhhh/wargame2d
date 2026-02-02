@@ -6,8 +6,8 @@ import webbrowser
 
 import uvicorn
 
-from infra.logger import STORAGE_DIR, configure_logging, get_logger
 
+from infra.logger import STORAGE_DIR, configure_logging, get_logger
 
 
 def _open_browser(url: str, delay: float = 1.0) -> None:

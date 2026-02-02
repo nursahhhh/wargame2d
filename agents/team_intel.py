@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, TYPE_CHECKING
 
+from typing import Tuple, Literal
+import math
 from env.core.types import EntityKind, GridPos, Team, MoveDir
 from env.entities.base import Entity
 from env.mechanics import hit_probability
@@ -254,6 +256,141 @@ class TeamIntel:
             valid.append(direction)
 
         return valid
+    
+    def enemy_fire_intensity(self, enemy: VisibleEnemy) -> float:
+        """
+        Temporal aggression signal.
+        """
+        return 0.7 if enemy.has_fired_before else 0.2
+
+    def _enemy_is_grouped(self, enemy: VisibleEnemy, all_enemies: Iterable[VisibleEnemy],radius: float = 2.5) -> bool:
+        """
+        Pure geometric grouping check.
+        """
+        for other in all_enemies:
+            if other.id == enemy.id:
+                continue
+            if self.grid.distance(enemy.position, other.position) <= radius:
+                return True
+        return False
+
+    def enemy_threat_score(
+        self,
+        enemy: VisibleEnemy,
+        reference_pos: GridPos,
+    ) -> float:
+        """
+        Local threat score ∈ [0,1].
+        Combines distance, firing behavior, and grouping.
+        """
+        distance = self.grid.distance(reference_pos, enemy.position)
+        distance_factor = max(
+            0.0, 1.0 - distance / max(self.grid.width, self.grid.height)
+        )
+
+        fire_factor = self.enemy_fire_intensity(enemy)
+       
+
+        return min(1.0, distance_factor + fire_factor )
+
+    def pressure_around(
+        self,
+        entity: Entity,
+        radius: float = 5.0,
+    ) -> float:
+        """
+        Aggregated local danger around an entity.
+        """
+        pressure = 0.0
+        for enemy in self.visible_enemies:
+            if self.grid.distance(entity.pos, enemy.position) <= radius:
+                pressure += self.enemy_threat_score(enemy, entity.pos)
+        return min(1.0, pressure)
+
+    def pressure_level(
+        self,
+        entity: Entity,
+        radius: float = 5.0,
+    ) -> str:
+        """
+        Discretized pressure for LLM consumption.
+        """
+        p = self.pressure_around(entity, radius)
+        if p < 0.4:
+            return "LOW"
+        if p < 0.7:
+            return "MEDIUM"
+        return "HIGH"
+    
+
+
+
+    RadarThreat = Literal["INCREASING", "DECREASING", "NEUTRAL"]
+
+    def radar_threat_trend(
+        current_pos: GridPos,
+        next_pos: GridPos,
+        radar_enemy_pos: GridPos,
+    ) -> RadarThreat:
+        """
+        Belief-based radar threat inference.
+
+        Compares distance to a radar-capable enemy before and after an action.
+
+        Returns:
+            - "INCREASING"  : moving closer (higher radar risk)
+            - "DECREASING"  : moving away (lower radar risk)
+            - "NEUTRAL"     : no change
+        """
+
+        curr_dx = current_pos[0] - radar_enemy_pos[0]
+        curr_dy = current_pos[1] - radar_enemy_pos[1]
+        curr_dist = math.hypot(curr_dx, curr_dy)
+
+        next_dx = next_pos[0] - radar_enemy_pos[0]
+        next_dy = next_pos[1] - radar_enemy_pos[1]
+        next_dist = math.hypot(next_dx, next_dy)
+
+        if next_dist < curr_dist:
+            return "INCREASING"
+        elif next_dist > curr_dist:
+            return "DECREASING"
+        else:
+            return "NEUTRAL"
+
+
+    # ------------------------------------------------------------
+    # Global aggression heuristic
+    # ------------------------------------------------------------
+    def aggression_level(
+        self,
+        *,
+        base: float = 0.5,
+        turn: int = 0,
+    ) -> float:
+        """
+        Global aggression scalar ∈ [0,1].
+        """
+        aggression = base
+
+        alive_friendlies = sum(1 for f in self.friendlies if f.alive)
+        enemy_count = len(self.visible_enemies)
+
+        if alive_friendlies > enemy_count:
+            aggression += 0.1
+        elif alive_friendlies < enemy_count:
+            aggression -= 0.1
+
+        if enemy_count > 0:
+            fired_ratio = (
+                sum(1 for e in self.visible_enemies if e.has_fired_before)
+                / enemy_count
+            )
+            aggression -= 0.2 * fired_ratio
+
+        aggression += min(0.2, turn * 0.01)
+
+        return max(0.0, min(aggression, 1.0))
 
     @classmethod
     def build(cls, world: "WorldState", team: Team) -> "TeamIntel":

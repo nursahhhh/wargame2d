@@ -2,6 +2,8 @@ import os
 import json
 import requests
 import re
+from datetime import datetime
+from pathlib import Path
 from typing import Dict, Any, Optional, TYPE_CHECKING
 
 from env.core.actions import Action
@@ -71,7 +73,7 @@ ACTION_TOOL = {
 # OpenRouter call
 # ============================================================
 
-def call_openrouter(prompt: str, model: str, api_key: str, step: int):
+def call_openrouter(prompt: str, model: str, api_key: str, step: int,    run_log_dir,):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -109,9 +111,18 @@ def call_openrouter(prompt: str, model: str, api_key: str, step: int):
 
     data = resp.json()
 
-    with open("LLM_response.txt", "a", encoding="utf-8") as f:
-        f.write(f"\n--- STEP {step} ---\n")
-        f.write(json.dumps(data.get("choices", [{}])[0].get("message", {}),  indent=2))
+    step_file = run_log_dir / f"step_{step:03d}.json"
+
+    log_payload = {
+        "step": step,
+        "model": model,
+        "prompt": prompt,
+        "raw_response": data,
+    }
+
+    with open(step_file, "w", encoding="utf-8") as f:
+        json.dump(log_payload, f, indent=2, ensure_ascii=False)
+
 
     msg = data["choices"][0]["message"]
 
@@ -151,8 +162,10 @@ class LLMHybridAgent(BaseAgent):
         self.memory_window = memory_window
         self.recent_history: list[str] = []
 
-        self.log_file = log_file
-        open(self.log_file, "w").close()
+            # ---- RUN LOG FOLDER ----
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.run_log_dir = Path("llm_runs") / timestamp
+        self.run_log_dir.mkdir(parents=True, exist_ok=True)
 
         self.step_counter = 0
 
@@ -186,8 +199,8 @@ class LLMHybridAgent(BaseAgent):
             intel=intel,
             allowed_actions=allowed_actions,
             config=self.prompt_config,
+            step = self.step_counter
         )
-
         full_prompt = self._build_context_prompt(prompt_text)
 
         self.step_counter += 1
@@ -196,7 +209,9 @@ class LLMHybridAgent(BaseAgent):
             prompt=full_prompt,
             model=self.model,
             api_key=self.api_key,
-            step=self.step_counter
+            step=self.step_counter,
+            run_log_dir=self.run_log_dir,
+
         )
 
         parsed_actions = {}
@@ -231,10 +246,112 @@ class LLMHybridAgent(BaseAgent):
         combined = f"""
 You are a tactical AI controlling aircraft and ground units.
 
-CRITICAL MOVEMENT RULE:
-If enemy positions are known, horizontal movement (LEFT / RIGHT)
-is often safer than vertical movement (UP / DOWN).
-Do NOT choose UP/DOWN unless it clearly increases distance from enemy radar.
+ ### ADVANCED TACTICAL DOCTRINES (STRICT & MANDATORY)
+
+    GLOBAL PRIORITY ORDER (NON-NEGOTIABLE):
+    1. AWACS SURVIVAL & STEALTH (mission-critical)
+    2. Enemy AWACS Destruction
+    3. Radar Avoidance
+    4. Efficient Exploration & Coverage
+    5. SAM Utilization
+    6. Air-to-Air Combat (LAST RESORT)
+
+    AWACS STEALTH & SURVIVAL DOCTRINE (CRITICAL):
+    - Friendly AWACS MUST NEVER ENTER enemy radar range.
+    - Radar entry is mission-failure-level risk.
+    - AWACS behavior must remain PROACTIVE, not reactive.
+    - If current or next move risks enemy radar detection, MOVE AWAY IMMEDIATELY.
+    - WAIT is allowed for AWACS ONLY IF fully radar-safe, no predicted radar intersection exists, and future escape paths are preserved.
+    - Avoid straight-line or boundary-hugging movement.
+    - Prefer diagonal/offset positions to maintain maneuver space.
+
+    TERMINAL OBJECTIVE RULE:
+    - Destroying enemy AWACS is PRIMARY and OVERRIDING objective.
+    - Once enemy AWACS is detected, ALL aircraft must prioritize closing distance; WAIT or RETREAT is FORBIDDEN.
+    - Unarmed aircraft should still move to constrain enemy movement or support AWACS objectives.
+
+    SHARED SENSOR FUSION (TEAM INTELLIGENCE):
+    - All friendly units share raw sensor data, inferred intel, and explored-area maps.
+    - Maintain a TEAM GLOBAL KNOWLEDGE MAP updated every step.
+    - Areas seen by ANY friendly unit (past or present) are considered TEAM-SEEN.
+    - Exploration decisions MUST use the TEAM map, not local observations.
+    - Redundant exploration of TEAM-SEEN areas is STRICTLY FORBIDDEN unless escorting, defending, or re-validating stale intel.
+
+    TEAM INFORMATION GAIN OBJECTIVE:
+    - Primary objective is maximizing TEAM information gain per action.
+    - Actively reason about what the TEAM does NOT know.
+    - Prefer actions that expand overall team situational awareness, not individual coverage.
+
+    BOUNDARY AWARENESS:
+    - Do not overextend toward map edges.
+    - Preserve future maneuver space.
+    - Edge exploration is allowed only if the area is TEAM-UNSEEN and high value.
+
+    ### UNIT ROLES
+    **AWACS**: Move, Wait. Mission-critical: survive & provide intel. Never enter enemy radar.
+    **Aircraft**: Move, Shoot, Wait. Protect AWACS. Primary scouts.
+    **Decoy**: Move, Wait. Appear as aircraft to distract enemy.
+    **SAM**: Shoot, Toggle, Wait. Area denial. Only detected aircraft may retreat near SAM.
+
+    ### SCOUTING & MOVEMENT (Aircraft, TEAM-AWARE)
+    - Every move is a scouting opportunity for the TEAM.
+    - Maximize coverage of strategically valuable areas using the TEAM map.
+    - Prioritize candidate cells according to:
+    1. Unseen by ANY friendly unit (highest priority)
+    2. High probability of enemy presence (last known positions, movement paths, high-value locations)
+    3. Coverage complementarity (avoid areas teammates are already moving toward)
+    4. Safety (avoid enemy radar unless mission-critical)
+    - Avoid redundant scouting paths and mirrored movements.
+    - Prefer divergent movement patterns across friendly aircraft.
+    - Avoid repeating movement loops (e.g., UP → RIGHT → DOWN → LEFT).
+    - Lateral moves are allowed if they increase TEAM coverage or reduce risk.
+    - Wait only if no TEAM-UNSEEN or high-value area is safely reachable.
+
+
+    ### SCOUTING PRIORITY SCORING
+    - Assign a scouting priority score to each candidate cell:
+    - +3: high-probability enemy locations
+    - +2: nearby unseen cells
+    - +1: moderately risky cells that extend coverage
+    - Prefer moves that maximize total priority coverage while maintaining escape paths
+
+    ### ENEMY & ALLY CONTEXT
+    - For each friendly unit, include:
+    - Nearby enemies: id, kind, position, distance, fire_behavior, grouped, priority_score
+    - Nearby allies: id, kind, position, distance, coverage overlap
+    - Top-priority cells: list of coordinates with highest scouting priority
+    - Enemy likelihood map: cells where enemy is likely to appear next turn
+    - Safe cells: cells safe from radar / high-threat detection
+
+    ### ENGAGEMENT PRINCIPLES
+    - Avoid unnecessary air-to-air combat
+    - Prefer SAMs for pressure and attrition
+    - Only shoot if it meaningfully reduces AWACS risk
+    - Multiple units can target the same high-value enemy across turns if needed
+
+    ### DECISION FORMAT
+    - Respond ONLY with valid JSON
+    - Select at most ONE action per unit from allowed actions
+    - Include a reason_tag reflecting strategy:
+    - SUPPORT_AWACS
+    - DEFEND_AWACS
+    - ENEMY_DETECTED_ATTACK
+    - HIGH_PRESSURE_AVOIDANCE
+    - LOW_PRESSURE_ADVANCE
+
+    ### EXAMPLE REASON_TAGS
+    - HIGH_PRESSURE_AVOIDANCE
+    - LOW_PRESSURE_ADVANCE
+    - ENEMY_DETECTED_ATTACK
+    - SUPPORT_AWACS
+    - DEFEND_AWACS
+    - HOLD_POSITION
+
+    ### FRIENDLY UNITS
+    - For each unit, list position, capabilities, nearby enemies, nearby allies, allowed actions
+    - Include calculated metrics: enemy priority_score, coverage overlap, radar safety assessment, top-priority cells, enemy likelihood map
+    - Ensure moves maximize unseen/high-value area coverage while maintaining safety and avoiding redundant scanning
+
 
 For each entity, choose AT MOST ONE action.
 
@@ -248,6 +365,7 @@ Respond ONLY with valid JSON using the provided function schema.
 """
 
         self.recent_history.append(current_prompt)
+
         return combined
 
 

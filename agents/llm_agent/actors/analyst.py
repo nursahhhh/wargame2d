@@ -1,7 +1,7 @@
 import json
 import re
 from typing import List, Dict, Any, Optional
-
+import os
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
@@ -210,6 +210,7 @@ def _format_step_logs(history: dict[int, dict], max_turns: int, current_turn: in
     return "\n".join(lines).strip()
 
 
+
 analyst_agent = Agent[GameDeps, AnalystOutput](
     "openrouter:x-ai/grok-4.1-fast",#"openrouter:deepseek/deepseek-v3.1-terminus:exacto",
     deps_type=GameDeps,
@@ -217,7 +218,7 @@ analyst_agent = Agent[GameDeps, AnalystOutput](
     model_settings=OpenRouterModelSettings(
         max_tokens=1024 * 32,
         openrouter_reasoning={"effort": "medium", "enabled":True},
-    ),
+                ),
     output_retries=3,
 )
 

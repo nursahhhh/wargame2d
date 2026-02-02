@@ -21,6 +21,13 @@ if TYPE_CHECKING:
     from env.environment import StepInfo
 
 
+import os
+import certifi
+
+os.environ["SSL_CERT_FILE"] = certifi.where()
+os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
+
+
 @register_agent("llm_basic")
 class LLMAgent(BaseAgent):
     """
@@ -142,8 +149,6 @@ class LLMAgent(BaseAgent):
             "analyst_error": analyst_error,
         }
 
-        #print(state_text)
-        print("\n" + "=" * 80 + "\n")
         return actions, metadata
 
     def _maybe_get_initial_strategy(self) -> Optional[str]:
