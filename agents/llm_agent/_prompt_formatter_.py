@@ -129,8 +129,6 @@ class PromptFormatter:
             "radar_range": entity.get_active_radar_range(),
         }
 
-        print(type(entity.kind))
-        print(entity.kind)
 
         # SAM-specific
         if hasattr(entity, "is_toggled") or  isinstance(entity, SAM): 

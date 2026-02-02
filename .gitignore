@@ -38,6 +38,8 @@ htmlcov/
 .env.*
 storage/
 
+llm_runs / 
+
 # OS-specific junk
 .DS_Store
 Thumbs.db
