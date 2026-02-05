@@ -9,7 +9,7 @@ from env.environment import StepInfo
 from env.mechanics.sensors import SensorSystem
 from env.scenario import Scenario
 from env.world import WorldState
-
+from .events import extract_events
 from agents.memory_agent.episode_recorder import EpisodeRecorder
 from agents.memory_agent.memory_store import MemoryStore
 
@@ -103,41 +103,54 @@ class GameRunner:
             merged_actions
         )
 
+
         # --------------------------------------------------
-        # 4. Record step (RAM)
+        # 5. Extract NEGATIVE events (semantic layer)
         # --------------------------------------------------
-        self.recorder.record(
-            step=self.turn,
-            world_before=world_before,
-            actions=merged_actions,
-            action_metadata={
-                "blue": blue_meta,
-                "red": red_meta,
-            },
-            step_info=self._last_info,
+        current_world: WorldState = self._state["world"]
+
+        events = extract_events(
+            prev_world=world_before,
+            world=current_world,
+            team=Team.BLUE,
         )
 
+        self.memory_store.record_step({
+                    "step": self.turn,
 
+                    "context": {
+                        "threat_level": blue_meta.get("threat_level"),
+                        "visible_enemies": red_meta.get("visible_enemies"),
+                        "distance_to_objective": blue_meta.get("distance_to_objective"),
+                    },
 
+                    "decision": {
+                        "actor": "blue",
+                        "source": "llm",
+                        "actions": blue_actions,
+                    }
+                })
 
+        for event in events:
+            log.warning("Negative event detected: %s", event)
+            # Flush memory immediately for irreversible failures
+            IRREVERSIBLE_SEVERITIES = {"HIGH", "CRITICAL"}
+
+            if event.get("severity") in IRREVERSIBLE_SEVERITIES:
+               
+               
+             
+                self.memory_store.flush_segment(
+                    trigger_event=event["type"],
+                    outcome=event,
+                )
+                log.info("Memory flushed due to irreversible event")
+
+                print("negatice events saved into memory file ")
+       
+     
         # --------------------------------------------------
-        # 5. Flush on critical events
-        # --------------------------------------------------
-
-## this part is problematic . the events must be defined . İt is not defined in stepinfo class fix this first of all 
-
-        if self._last_info and self._last_info.events:
-            for event in self._last_info.events:
-                if getattr(event, "is_critical", False):
-                    log.info("Critical event detected: %s", event)
-
-                    self.memory_store.flush_segment(
-                        trigger_event=event.type,
-                        outcome=event.to_dict() if hasattr(event, "to_dict") else {},
-                    )
-
-        # --------------------------------------------------
-        # 6. Handle terminal state
+        # 5. Handle terminal state
         # --------------------------------------------------
         if self._done:
             self._final_world = self._clone_world_with_observations(
@@ -151,7 +164,7 @@ class GameRunner:
             )
 
         # --------------------------------------------------
-        # 7. Return UI frame
+        #6. Return UI frame
         # --------------------------------------------------
         return Frame(
             world=world_before,
