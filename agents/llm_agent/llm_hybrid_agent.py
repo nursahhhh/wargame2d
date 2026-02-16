@@ -107,6 +107,7 @@ def call_openrouter(prompt: str, model: str, api_key: str, step: int,    run_log
     if resp.status_code != 200:
         print("=== OpenRouter HTTP ERROR ===")
         print(resp.text)
+
         resp.raise_for_status()
 
     data = resp.json()
@@ -258,7 +259,7 @@ P2. DESTROY ENEMY AWACS — Terminal win condition.
 P3. AVOID DETECTION — Stay outside enemy radar; deny interception.
 P4. GAIN INFORMATION — Explore TEAM-UNSEEN areas (conditional).
 P5. ACHIEVE NUMERICAL ADVANTAGE — Coordinate SAM + aircraft.
-P6. ENGAGE IN COMBAT — Only when tactically necessary.
+P6. ENGAGE IN COMBAT — Prefer engagements that improve force advantage.
 
 Priority P4 (Exploration) activates ONLY when:
   - Enemy AWACS is NOT currently detected
@@ -302,6 +303,23 @@ SOFT constraints — Preferences, not requirements:
   [S4] Avoid boundary-hugging paths for AWACS
 
 ============================================================
+ADVANTAGE DEVELOPMENT RULE
+============================================================
+
+If immediate engagement does not yield clear local advantage:
+
+  The unit MUST execute one of the following:
+
+  - Reposition to create multi-unit convergence
+  - Move to overlap with friendly SAM coverage
+  - Constrain enemy movement corridor
+  - Improve radar coverage geometry
+  - Reduce own exposure while preserving pressure
+
+Passive retreat without strategic improvement is discouraged.
+Inaction is not acceptable when advantage can be developed.
+
+============================================================
 UNIT CAPABILITIES
 ============================================================
 AWACS:
@@ -320,7 +338,7 @@ Decoy:
   - May sacrifice for strategic gain, but not for zero value
 
 SAM:
-  - Actions: SHOOT (if target in range), TOGGLE_RADAR, WAIT
+  - Actions:Shoot, Toggle, Wait.
   - Role: Static area denial; range advantage over aircraft
   - Default: ON (for area control), OFF only for ambush/cooldown
 
@@ -381,10 +399,32 @@ ANTI-EXPLOIT RULES
 ============================================================
 OUTPUT FORMAT
 ============================================================
+
 Respond with valid JSON matching the provided function schema.
+
+BEFORE calling the function, you MUST internally evaluate:
+  - Threat exposure
+  - Engagement advantage
+  - Coordination potential
+
+For each selected action:
+
 - Select AT MOST ONE action per unit
 - Include a reason_tag for EVERY action
+- Include a reasoning object for EVERY action with:
+
+    {{
+      "threat_level": 0–10,
+      "exposure_risk": 0–10,
+      "advantage_gain": 0–10,
+      "coordination_value": 0–10,
+      "justification": "Short tactical explanation"
+    }}
+
 - Omit units that should WAIT (or explicitly include WAIT)
+
+Actions that increase exposure_risk above 6 without
+advantage_gain above 6 are invalid.
 
 Allowed reason_tags:
   - PROTECT_AWACS         (escorting, screening, retreating AWACS)
@@ -408,7 +448,6 @@ CURRENT SITUATION
 {current_prompt}
 
 Respond ONLY with valid JSON.
-No explanations. No markdown. No extra text.
 """
 
         self.recent_history.append(current_prompt)

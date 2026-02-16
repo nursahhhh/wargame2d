@@ -1,0 +1,17 @@
+{
+  "episode_id": 26,
+  "segment_id": 0,
+  "trigger_event": "ALLY_LOST",
+  "failure_analysis": {
+    "entity_type": "Decoy",
+    "tactical_error": "Decoy (ID 5) executed MOVE RIGHT to [9,6] at step 7 while allied units 2 and 3 diverged to UP and DOWN, resulting in isolated exposure at map edge without formation coherence.",
+    "combat_principle_violated": "Mutual support",
+    "engagement_context": {
+      "enemy_radar_overlap": true,
+      "friendly_support_overlap": false,
+      "within_enemy_sam_range": true
+    },
+    "avoid_rule": "Decoy: If friendly units within 3-tile radius execute non-parallel moves (e.g., UP/DOWN vs RIGHT) and current x >= 8, then WAIT instead of MOVE RIGHT.",
+    "confidence": 0.75
+  }
+}

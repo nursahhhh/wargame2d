@@ -1,0 +1,17 @@
+{
+  "episode_id": 17,
+  "segment_id": 0,
+  "trigger_event": "ALLY_LOST",
+  "failure_analysis": {
+    "entity_type": "FIGHTER",
+    "tactical_error": "Fighter ID 2 advanced repeatedly RIGHT to exposed position [14,3] over 5 steps without coordination, then initiated SHOOT on target 7, drawing lethal counterfire.",
+    "combat_principle_violated": "Mutual support",
+    "engagement_context": {
+      "enemy_radar_overlap": true,
+      "friendly_support_overlap": false,
+      "within_enemy_sam_range": true
+    },
+    "avoid_rule": "For FIGHTER, if no friendly_support_overlap and position x >=14 with detected enemy (target_id visible), do not SHOOT; prioritize MOVE to align with allies or WAIT.",
+    "confidence": 0.65
+  }
+}

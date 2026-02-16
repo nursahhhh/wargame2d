@@ -1,4 +1,6 @@
 import json
+
+import logging
 from pathlib import Path
 from typing import Dict, Any, List
 
@@ -19,14 +21,15 @@ class MemoryAgent:
     # Stage 1: Reflection Extraction
     # ----------------------------
     def extract_reflections(self):
-        """Process all segment files and save reflections (stage 1)"""
+        """Process all episodes and extract segment + global reflections"""
         self.reflections_dir.mkdir(exist_ok=True, parents=True)
+
         for episode_dir in self.episodes_dir.iterdir():
             if episode_dir.is_dir():
-                for segment_file in episode_dir.glob("segment_*.json"):
-                    self._process_segment(segment_file)
-        import logging
+                self._process_episode(episode_dir)
+
         logging.info("Reflection extraction completed.")
+
 
     def _process_segment(self, segment_path: Path):
         segment = json.loads(segment_path.read_text(encoding="utf-8"))
@@ -35,37 +38,141 @@ class MemoryAgent:
         reflection = self._safe_parse(response)
         self._write_reflection(segment, reflection)
 
+    def _process_episode(self, episode_dir: Path):
+
+        segments = sorted(episode_dir.glob("segment_*.json"))
+        all_segments = []
+        early_termination_detected = False
+
+        for segment_file in segments:
+            segment = json.loads(segment_file.read_text(encoding="utf-8"))
+            all_segments.append(segment)
+
+            # Segment-level reflection
+            self._process_segment(segment_file)
+
+            # Check early termination trigger
+            if segment.get("trigger_event") == "EARLY_TERMINATION":
+                early_termination_detected = True
+
+        # If early termination occurred → global analysis
+        if early_termination_detected:
+            episode_id = all_segments[0]["episode_id"]
+            self._analyze_episode_globally(episode_id, all_segments)
+
+    def _analyze_episode_globally(self, episode_id: int, segments: List[Dict[str, Any]]):
+
+        prompt = self._build_episode_analysis_prompt(segments)
+        response = self.llm(prompt)
+        analysis = self._safe_parse(response)
+
+        episode_path = self.reflections_dir / f"episode_{episode_id}.json"
+
+        if episode_path.exists():
+            episode_data = json.loads(episode_path.read_text(encoding="utf-8"))
+        else:
+            episode_data = {
+                "episode_id": episode_id,
+                "segment_reflections": [],
+                "episode_analysis": None
+            }
+
+        episode_data["episode_analysis"] = analysis
+
+        episode_path.write_text(
+            json.dumps(episode_data, indent=2),
+            encoding="utf-8"
+        )
+
+    def _build_episode_analysis_prompt(self, segments: List[Dict[str, Any]]) -> str:
+        return f"""
+            You are a strategic tactical analysis agent.
+
+            The following segments belong to a single episode that ended with EARLY_TERMINATION.
+
+            Together they represent the full trajectory of the episode.
+
+            Your task is to analyze the episode SYSTEMICALLY.
+
+            Focus on:
+
+            1. Why offensive capability collapsed
+            2. Asset misallocation patterns
+            3. Radar layering failures
+            4. Coordination breakdowns
+            5. Information dominance loss
+            6. Extract 2-5 GLOBAL avoidance principles
+
+            Do NOT repeat segment-level tactical mistakes.
+            Focus only on team-level patterns.
+
+            Segments:
+            {segments}
+
+            Return STRICT JSON:
+
+            {{
+            "systemic_failures": "...",
+            "offensive_collapse_cause": "...",
+            "coordination_breakdowns": "...",
+            "global_avoid_principles": ["...", "..."],
+            "confidence": 0.0
+            }}
+            """
+
+
     @staticmethod
     def build_segment_reflection_prompt(segment: dict) -> str:
+
         return f"""
-You are a failure analysis memory agent.
+                You are a tactical failure analysis agent.
 
-You are given a gameplay segment that ended with a failure event.
-The context information may be incomplete or null.
-Your task is to analyze the ACTION SEQUENCE and infer why the failure occurred.
+                You are given a gameplay segment that ended with a failure event.
+                The context information may be incomplete or null.
 
-Segment data:
-{segment}
+                DO NOT analyze the model's behavior, repetition, or decision style.
+                DO NOT comment on adaptivity or action diversity.
 
-Analyze and answer:
+                Instead, analyze the battlefield causality.
 
-1. What happened in this segment?
-2. Which action or repeated action pattern most likely caused the failure?
-3. Why was this behavior risky or incorrect?
-4. What action(s) should NOT have been taken?
-5. Provide a general rule to avoid this failure in the future.
+                Segment data:
+                {segment}
 
-Return STRICT JSON in the following format:
-{{
-"summary": "...",
-"root_cause": "...",
-"bad_action_pattern": "...",
-"avoid_rule": "...",
-"confidence": 0.0
-}}
+                Your task:
 
-Be concise, abstract, and generalize beyond this single episode.
-"""
+                1. Identify which FRIENDLY ENTITY was destroyed or caused the failure.
+                2. Describe the tactical situation at the time of failure:
+                - Radar overlap
+                - SAM coverage
+                - Support proximity
+                - Detection order
+                3. Explain the specific tactical mistake made by that entity.
+                4. Identify the violated combat principle.
+                5. Generate a CONDITIONAL avoidance rule tied to entity type and spatial context.
+
+                The rule must:
+                - Be entity-specific (FIGHTER / AWACS / SAM / DECOY)
+                - Reference spatial or radar conditions
+                - Be reusable in future similar geometries
+
+                Return STRICT JSON in the following format:
+
+                {{
+                "entity_type": "...",
+                "tactical_error": "...",
+                "combat_principle_violated": "...",
+                "engagement_context": {{
+                    "enemy_radar_overlap": true/false,
+                    "friendly_support_overlap": true/false,
+                    "within_enemy_sam_range": true/false
+                }},
+                "avoid_rule": "...",
+                "confidence": 0.0
+                }}
+
+                Be precise, geometric, and operational.
+                """
+
 
     def _safe_parse(self, text: str) -> Dict[str, Any]:
         try:
@@ -80,17 +187,39 @@ Be concise, abstract, and generalize beyond this single episode.
             }
 
     def _write_reflection(self, segment: dict, reflection: dict):
-        filename = f"ep{segment['episode_id']}_seg{segment['segment_id']}.json"
+        """
+        Store reflections grouped by episode.
+        One file per episode.
+        """
+
+        episode_id = segment["episode_id"]
+        episode_path = self.reflections_dir / f"episode_{episode_id}.json"
+
+        # --- Load existing episode file if present ---
+        if episode_path.exists():
+            episode_data = json.loads(episode_path.read_text(encoding="utf-8"))
+        else:
+            episode_data = {
+                "episode_id": episode_id,
+                "reflections": []
+            }
+
+        # --- Build reflection payload ---
         payload = {
-            "episode_id": segment["episode_id"],
             "segment_id": segment["segment_id"],
-            "trigger_event": segment["trigger_event"],
+            "trigger_event": segment.get("trigger_event"),
             "failure_analysis": reflection
         }
-        (self.reflections_dir / filename).write_text(
-            json.dumps(payload, indent=2),
+
+        # --- Append ---
+        episode_data["reflections"].append(payload)
+
+        # --- Save back ---
+        episode_path.write_text(
+            json.dumps(episode_data, indent=2),
             encoding="utf-8"
         )
+
 
     # ----------------------------
     # Stage 2: Experience Distillation
@@ -113,46 +242,66 @@ Be concise, abstract, and generalize beyond this single episode.
         return guidance
 
     def _load_all_reflections(self) -> List[Dict[str, Any]]:
-        reflections = []
-        for path in self.reflections_dir.glob("*.json"):
-            data = json.loads(path.read_text(encoding="utf-8"))
-            if "failure_analysis" in data:
-                reflections.append(data["failure_analysis"])
-        return reflections
 
-    def _build_experience_distillation_prompt(self, reflections: List[Dict[str, Any]]) -> str:
+        segment_reflections = []
+        episode_analyses = []
+
+        for path in self.reflections_dir.glob("episode_*.json"):
+            episode_data = json.loads(path.read_text(encoding="utf-8"))
+
+            for item in episode_data.get("segment_reflections", []):
+                segment_reflections.append(item["failure_analysis"])
+
+            if episode_data.get("episode_analysis"):
+                episode_analyses.append(episode_data["episode_analysis"])
+
+        return {
+            "segment_reflections": segment_reflections,
+            "episode_analyses": episode_analyses
+        }
+
+
+    def _build_experience_distillation_prompt(self, data: Dict[str, Any]) -> str:
+
         return f"""
-You are an experience distillation agent.
+                You are an experience distillation agent.
 
-You are given a collection of FAILURE REFLECTIONS extracted from past gameplay.
-These reflections may be noisy, conflicting, or low quality.
+                You are given TWO TYPES of reflective evidence:
 
-Your task is to extract a SMALL SET of high-quality NEGATIVE experience rules
-that should guide a future game-playing agent.
+                1) Segment-level reflections (local tactical mistakes)
+                2) Episode-level analyses (systemic collapse reasoning)
 
-Guidelines:
-- Treat reflections as evidence, not truth
-- Merge similar ideas
-- Discard weak or overly specific rules
-- Prefer general, safety-oriented guidance
-- Focus ONLY on behaviors that should be AVOIDED
+                IMPORTANT:
+                Episode-level analyses represent higher-level structural failures.
+                They should be weighted MORE heavily than individual segment reflections.
 
-Input reflections:
-{reflections}
+                Your task:
 
-Return STRICT JSON:
+                - Merge consistent ideas
+                - Prioritize systemic patterns
+                - Discard weak or overly specific insights
+                - Produce 3-5 NEGATIVE doctrine rules
 
-{{
-  "experience_guidance": [
-    {{"rule": "...", "rationale": "...", "confidence": 0.0}}
-  ]
-}}
+                Segment-level reflections:
+                {data["segment_reflections"]}
 
-Constraints:
-- Max 5 rules
-- Confidence in range [0.0, 1.0]
-- Be concise and generalize
-"""
+                Episode-level analyses:
+                {data["episode_analyses"]}
+
+                Return STRICT JSON:
+
+                {{
+                "experience_guidance": [
+                    {{"rule": "...", "rationale": "...", "confidence": 0.0}}
+                ]
+                }}
+
+                Constraints:
+                - Max 5 rules
+                - Confidence in [0.0, 1.0]
+                - Prefer structural principles over local mistakes
+                """
+
 
     def _safe_parse_distillation(self, text: str) -> Dict[str, Any]:
         try:

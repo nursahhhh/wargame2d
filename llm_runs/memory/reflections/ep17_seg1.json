@@ -1,0 +1,17 @@
+{
+  "episode_id": 17,
+  "segment_id": 1,
+  "trigger_event": "SAM_LOST",
+  "failure_analysis": {
+    "entity_type": "SAM",
+    "tactical_error": "SAM entity 4 executed SHOOT at target_id 6 (step 16) despite null visible_enemies across all steps, revealing its fixed position [3,6] without confirmation of threat, enabling enemy targeting and destruction at step 19.",
+    "combat_principle_violated": "Firing discipline (engage only on verified threats under protective cover)",
+    "engagement_context": {
+      "enemy_radar_overlap": false,
+      "friendly_support_overlap": false,
+      "within_enemy_sam_range": false
+    },
+    "avoid_rule": "SAM: Condition SHOOT on visible_enemies not null AND friendly actor overlap within 2 sectors; else WAIT.",
+    "confidence": 0.65
+  }
+}

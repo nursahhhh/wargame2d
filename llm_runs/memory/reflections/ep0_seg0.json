@@ -1,0 +1,17 @@
+{
+  "episode_id": 0,
+  "segment_id": 0,
+  "trigger_event": "ALLY_LOST",
+  "failure_analysis": {
+    "entity_type": "FIGHTER",
+    "tactical_error": "Entity 3 (Aircraft ID 3) executed isolated RIGHT MOVE actions in steps 7-8 without prior threat detection, exposing position [10,9] while partial unit remained static.",
+    "combat_principle_violated": "Mutual support",
+    "engagement_context": {
+      "enemy_radar_overlap": false,
+      "friendly_support_overlap": false,
+      "within_enemy_sam_range": false
+    },
+    "avoid_rule": "FIGHTER must not MOVE RIGHT (or any dir) when threat_level=None and visible_enemies=None unless >=2 adjacent friendlies execute synchronized MOVE in same dir.",
+    "confidence": 0.4
+  }
+}

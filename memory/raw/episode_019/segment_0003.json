@@ -1,0 +1,70 @@
+{
+  "episode_id": 19,
+  "segment_id": 3,
+  "trigger_event": "ALLY_LOST",
+  "time_range": {
+    "start_step": 25,
+    "end_step": 26
+  },
+  "step_trace": [
+    {
+      "step": 25,
+      "context": {
+        "threat_level": null,
+        "visible_enemies": null,
+        "distance_to_objective": null
+      },
+      "decision": {
+        "actor": "blue",
+        "source": "llm",
+        "actions": {
+          "2": {
+            "type": "SHOOT",
+            "params": {
+              "target_id": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "step": 26,
+      "context": {
+        "threat_level": null,
+        "visible_enemies": null,
+        "distance_to_objective": null
+      },
+      "decision": {
+        "actor": "blue",
+        "source": "llm",
+        "actions": {
+          "2": {
+            "type": "MOVE",
+            "params": {
+              "dir": "DOWN"
+            }
+          },
+          "3": {
+            "type": "MOVE",
+            "params": {
+              "dir": "UP"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outcome": {
+    "type": "ALLY_LOST",
+    "turn": 26,
+    "entity_id": 3,
+    "entity_type": "Aircraft",
+    "last_position": [
+      18,
+      0
+    ],
+    "irreversible": true,
+    "severity": "HIGH"
+  },
+  "created_at": "2026-02-16T09:24:48.516964"
+}

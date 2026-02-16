@@ -1,0 +1,17 @@
+{
+  "episode_id": 18,
+  "segment_id": 1,
+  "trigger_event": "ALLY_LOST",
+  "failure_analysis": {
+    "entity_type": "FIGHTER",
+    "tactical_error": "Unit 3 executed repeated RIGHT moves from steps 15-20, positioning at [27,9], then initiated SHOOT on target 9 at step 21, exposing itself to immediate counter-fire without prior threat clearance.",
+    "combat_principle_violated": "Mutual support",
+    "engagement_context": {
+      "enemy_radar_overlap": true,
+      "friendly_support_overlap": false,
+      "within_enemy_sam_range": true
+    },
+    "avoid_rule": "FIGHTER: Prohibit MOVE RIGHT or SHOOT if x >= 27 without adjacent friendly units (1,4) in y=9 row or confirmed enemy radar negation.",
+    "confidence": 0.65
+  }
+}

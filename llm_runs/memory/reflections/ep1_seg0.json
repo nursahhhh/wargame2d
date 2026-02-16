@@ -1,0 +1,17 @@
+{
+  "episode_id": 1,
+  "segment_id": 0,
+  "trigger_event": "ALLY_LOST",
+  "failure_analysis": {
+    "entity_type": "Aircraft",
+    "tactical_error": "Aircraft entity_id 2 advanced to exposed position [13,3] via MOVE RIGHT without threat visibility, entering enemy engagement envelope.",
+    "combat_principle_violated": "Reconnaissance precedes direct maneuver",
+    "engagement_context": {
+      "enemy_radar_overlap": true,
+      "friendly_support_overlap": false,
+      "within_enemy_sam_range": true
+    },
+    "avoid_rule": "Aircraft at grid positions x>=13: WAIT unless visible_enemies populated and friendly_support_overlap true.",
+    "confidence": 0.65
+  }
+}

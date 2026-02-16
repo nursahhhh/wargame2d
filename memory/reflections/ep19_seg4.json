@@ -1,0 +1,17 @@
+{
+  "episode_id": 19,
+  "segment_id": 4,
+  "trigger_event": "ALLY_LOST",
+  "failure_analysis": {
+    "entity_type": "FIGHTER",
+    "tactical_error": "Fighter unit 2 advanced (MOVE DOWN at step 27), engaged enemy target 10 (SHOOT at step 28), then laterally repositioned (MOVE LEFT at step 29), exposing its position to counterfire at [18,6] without suppression or evasion.",
+    "combat_principle_violated": "Mutual support",
+    "engagement_context": {
+      "enemy_radar_overlap": true,
+      "friendly_support_overlap": false,
+      "within_enemy_sam_range": false
+    },
+    "avoid_rule": "If FIGHTER detects visible enemy and enemy_radar_overlap=true with no friendly_support_overlap within adjacent grid sectors, prioritize EVADE over SHOOT or directional MOVE.",
+    "confidence": 0.55
+  }
+}

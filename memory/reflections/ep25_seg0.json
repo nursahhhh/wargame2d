@@ -1,0 +1,17 @@
+{
+  "episode_id": 25,
+  "segment_id": 0,
+  "trigger_event": "ALLY_LOST",
+  "failure_analysis": {
+    "entity_type": "Decoy",
+    "tactical_error": "Decoy ID 5 executed MOVE RIGHT at step 6 into presumed enemy engagement zone immediately after allies 2 and 3 initiated SHOOT on targets 7 and 8, resulting in isolated destruction at [10, 6] without prior threat assessment.",
+    "combat_principle_violated": "Mutual support; isolated advance during initial contact",
+    "engagement_context": {
+      "enemy_radar_overlap": true,
+      "friendly_support_overlap": false,
+      "within_enemy_sam_range": false
+    },
+    "avoid_rule": "DECOY at forward grid x>=10: if allies execute SHOOT on newly visible enemies within adjacent columns, HOLD/WAIT instead of MOVE RIGHT unless friendly shooters overlap Decoy's RIGHT flank sector.",
+    "confidence": 0.65
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "step": 2,
+  "model": "x-ai/grok-4.1-fast",
+  "prompt": "\n\nYou are a tactical AI commander controlling friendly units in a 2D combat grid:\nAWACS, Aircraft, Decoys, and SAM sites.\n\n All cells within range of: Friendly AWACS radar OR active SAM radar\n  - This coverage is SHARED among all friendly units instantly\n============================================================\nMISSION OBJECTIVES (Ordered by Priority)\n============================================================\nP1. PROTECT FRIENDLY AWACS — Survival is absolute. Never compromise.\nP2. DESTROY ENEMY AWACS — Terminal win condition.\nP3. AVOID DETECTION — Stay outside enemy radar; deny interception.\nP4. GAIN INFORMATION — Explore TEAM-UNSEEN areas (conditional).\nP5. ACHIEVE NUMERICAL ADVANTAGE — Coordinate SAM + aircraft.\nP6. ENGAGE IN COMBAT — Only when tactically necessary.\n\nPriority P4 (Exploration) activates ONLY when:\n  - Enemy AWACS is NOT currently detected\n  - AND TEAM-UNSEEN cells exist outside friendly sensor coverage\n\nLower priorities MUST NOT override higher priorities.\n\n============================================================\nGAME STATE (Provided Each Turn)\n============================================================\nYou will receive:\n- Grid dimensions and boundaries\n- All friendly unit positions, types, states (armed/unarmed, radar on/off)\n- Known enemy unit positions (if detected)\n- TEAM-SEEN cells: observed by ANY friendly unit at ANY time\n- TEAM-UNSEEN cells: never observed by any friendly unit\n- Friendly radar coverage (AWACS + active SAMs)\n- Estimated/known enemy radar coverage\n- Turn number\n\n============================================================\nCONSTRAINT CLASSIFICATION\n============================================================\nHARD constraints — Never violate under any circumstance:\n  [H1] AWACS must NEVER enter known enemy radar coverage\n  [H2] AWACS must NEVER end turn with zero safe escape routes\n  [H3] Actions that guarantee AWACS destruction next turn are FORBIDDEN\n  [H4] Exploration inside friendly radar coverage is INVALID\n  [H5] Re-labeling invalid exploration as DEFEND/SUPPORT is FORBIDDEN\n\nFIRM constraints — Violate only to satisfy HARD constraints:\n  [F1] AWACS should maintain 2+ cell buffer from enemy radar edge\n  [F2] AWACS should stay behind combat units (layered protection)\n  [F3] Aircraft should not WAIT when enemy AWACS is detected\n  [F4] At least one unit should advance exploration each turn (when P4 active)\n\nSOFT constraints — Preferences, not requirements:\n  [S1] Prefer 2v1+ engagements over fair fights\n  [S2] Prefer lateral/backward AWACS movement over forward\n  [S3] Prefer SAM ON for area denial\n  [S4] Avoid boundary-hugging paths for AWACS\n\n============================================================\nUNIT CAPABILITIES\n============================================================\nAWACS:\n  - Actions: MOVE, WAIT\n  - Radar: Provides wide-area friendly sensor coverage\n  - Rules: Apply all HARD constraints strictly\n\nAircraft:\n  - Actions: MOVE, SHOOT (if armed and target in range), WAIT\n  - Role: Escort, exploration, interception, terminal attack\n  - When enemy AWACS detected: MUST advance or constrain escape\n\nDecoy:\n  - Actions: MOVE, WAIT\n  - Role: Expendable scouting, deception, shot absorption\n  - May sacrifice for strategic gain, but not for zero value\n\nSAM:\n  - Actions:Shoot, Toggle, Wait.\n  - Role: Static area denial; range advantage over aircraft\n  - Default: ON (for area control), OFF only for ambush/cooldown\n\n============================================================\nSHARED INTELLIGENCE (Team Sensor Fusion)\n============================================================\n- All units share a SINGLE GLOBAL KNOWLEDGE MAP\n- A cell is TEAM-SEEN if observed by ANY friendly unit, ever\n- Individual unit perception is IRRELEVANT for exploration decisions\n- Cells inside friendly AWACS/SAM radar have ZERO exploration value\n- Exploration targets must be TEAM-UNSEEN AND outside friendly radar\n\n============================================================\nDECISION RULES BY SITUATION\n============================================================\n\nIF enemy AWACS is DETECTED:\n  → P2 activates: All aircraft MUST reduce distance or block escape\n  → WAIT/RETREAT forbidden for armed aircraft\n  → Ignore exploration; prioritize kill\n\nIF friendly AWACS is THREATENED (enemy closing or radar encroaching):\n  → P1 activates: Abort lower priorities immediately\n  → AWACS moves to maximize radar separation\n  → Aircraft may intercept or screen\n\nIF neither AWACS is detected AND TEAM-UNSEEN cells exist:\n  → P4 activates: At least ONE unit MUST explore\n  → Select highest-uncertainty regions first\n  → Aircraft/decoys reposition toward TEAM-UNSEEN boundaries\n  → WAIT is FORBIDDEN if exploration-enabling move exists\n\nIF all exploration moves are blocked by constraints:\n  → Reposition toward the BOUNDARY of known space\n  → This enables future exploration access\n  → Log this as reason_tag: REPOSITION_FOR_EXPLORATION\n\n============================================================\nCONFLICT RESOLUTION (When Constraints Collide)\n============================================================\n1. Always satisfy HARD constraints first\n2. Satisfy as many FIRM constraints as possible without violating HARD\n3. Among remaining options, prefer those satisfying SOFT constraints\n4. If ALL actions violate at least one constraint:\n   → Choose the action that violates the LOWEST priority constraint\n   → Flag reason_tag with: FORCED_CONSTRAINT_VIOLATION\n\n============================================================\nANTI-EXPLOIT RULES\n============================================================\n- Exploration claimed inside friendly radar = INVALID (H4)\n- DEFEND_AWACS near AWACS when effect is exploration = INVALID (H5)\n- Adversarial safety check: If move is safe now but unsafe after\n  obvious enemy response, treat it as UNSAFE\n- Edge-hugging or corner moves for AWACS are high-risk\n- No laundering invalid actions through alternate reason_tags\n\n============================================================\nOUTPUT FORMAT\n============================================================\nRespond with valid JSON matching the provided function schema.\n- Select AT MOST ONE action per unit\n- Include a reason_tag for EVERY action\n- Omit units that should WAIT (or explicitly include WAIT)\n\nAllowed reason_tags:\n  - PROTECT_AWACS         (escorting, screening, retreating AWACS)\n  - INTERCEPT_THREAT      (moving to block/engage approaching enemy)\n  - ATTACK_ENEMY_AWACS    (terminal attack execution)\n  - EXPLORE_UNSEEN        (advancing into TEAM-UNSEEN space)\n  - REPOSITION_FOR_EXPLORATION (moving toward UNSEEN boundary)\n  - AREA_DENIAL           (SAM toggling, zone control)\n  - DECOY_SACRIFICE       (intentional expendable action)\n  - AWAIT_OPPORTUNITY     (justified WAIT with no better option)\n  - FORCED_CONSTRAINT_VIOLATION (when no fully legal action exists\n\n====================================================\nRECENT HISTORY\n====================================================\n\nGLOBAL AGGRESSION ESTIMATE: 0.6 (higher = safer to pressure, lower = defensive posture)\n\n=== FRIENDLY UNITS ===\n\nUnit AWACS#5 at [25, 14]\n- Capabilities: mobile=True, armed=False, radar=9\n- Nearby threats: none\n\nUnit AIRCRAFT#6 at [20, 9]\n- Capabilities: mobile=True, armed=True, radar=5\n- Nearby threats: none\n\nUnit AIRCRAFT#7 at [20, 3]\n- Capabilities: mobile=True, armed=True, radar=5\n- Nearby threats: none\n\nUnit SAM#9 at [26, 6]\n- Capabilities: mobile=False, armed=True, radar=0.0\n- Nearby threats: none\n\n====================================================\nCURRENT SITUATION\n====================================================\n\nGLOBAL AGGRESSION ESTIMATE: 0.61 (higher = safer to pressure, lower = defensive posture)\n\n=== FRIENDLY UNITS ===\n\nUnit AWACS#5 at [25, 14]\n- Capabilities: mobile=True, armed=False, radar=9\n- Nearby threats: none\n\nUnit AIRCRAFT#6 at [19, 9]\n- Capabilities: mobile=True, armed=True, radar=5\n- Nearby threats: none\n\nUnit AIRCRAFT#7 at [21, 3]\n- Capabilities: mobile=True, armed=True, radar=5\n- Nearby threats: none\n\nUnit SAM#9 at [26, 6]\n- Capabilities: mobile=False, armed=True, radar=8\n- Nearby threats: none\n\nRespond ONLY with valid JSON.\nNo explanations. No markdown. No extra text.\n",
+  "raw_response": {
+    "id": "gen-1771221226-epZdeBn5rxvvGmgXJfZE",
+    "provider": "xAI",
+    "model": "x-ai/grok-4.1-fast",
+    "object": "chat.completion",
+    "created": 1771221226,
+    "choices": [
+      {
+        "error": {
+          "message": "Network connection lost.",
+          "code": 502,
+          "metadata": {
+            "provider_name": "xAI"
+          }
+        },
+        "logprobs": null,
+        "finish_reason": null,
+        "native_finish_reason": null,
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "refusal": null,
+          "reasoning": null
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 2428,
+      "completion_tokens": 0,
+      "total_tokens": 2428,
+      "cost": 0,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.0004856,
+        "upstream_inference_prompt_cost": 0.0004856,
+        "upstream_inference_completions_cost": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  }
+}

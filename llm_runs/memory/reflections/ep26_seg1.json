@@ -1,0 +1,17 @@
+{
+  "episode_id": 26,
+  "segment_id": 1,
+  "trigger_event": "ALLY_LOST",
+  "failure_analysis": {
+    "entity_type": "Decoy",
+    "tactical_error": "Decoy entity 5 executed MOVE RIGHT to [10,6], entering lethal enemy engagement zone without visible support or cover.",
+    "combat_principle_violated": "Mutual Support",
+    "engagement_context": {
+      "enemy_radar_overlap": true,
+      "friendly_support_overlap": false,
+      "within_enemy_sam_range": true
+    },
+    "avoid_rule": "DECOY: Prohibit RIGHT moves projecting to x>=10 grid column unless friendly_support_overlap=true and enemy_radar_overlap=false.",
+    "confidence": 0.4
+  }
+}

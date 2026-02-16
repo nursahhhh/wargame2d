@@ -1,0 +1,17 @@
+{
+  "episode_id": 19,
+  "segment_id": 1,
+  "trigger_event": "ALLY_LOST",
+  "failure_analysis": {
+    "entity_type": "Decoy",
+    "tactical_error": "Decoy entity 5 performed an isolated RIGHT move to [8,6] without visible enemy confirmation or adjacent friendly screening, exposing it to undetected enemy engagement.",
+    "combat_principle_violated": "Mutual support",
+    "engagement_context": {
+      "enemy_radar_overlap": false,
+      "friendly_support_overlap": false,
+      "within_enemy_sam_range": true
+    },
+    "avoid_rule": "Decoy: Prohibit RIGHT or lateral moves to x=8 grid columns without fighter within 1 tile adjacency or confirmed no enemy SAM envelope overlap.",
+    "confidence": 0.6
+  }
+}

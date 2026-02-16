@@ -52,6 +52,20 @@ def step(request: StepRequest):
     except RuntimeError as exc:
         raise HTTPException(400, str(exc)) from exc
 
+@app.post("/stop")
+def stop():
+    global runner
+
+    if runner is None:
+        raise HTTPException(400, "No active game")
+
+    try:
+        runner.abort_episode()
+        runner = None
+        return {"success": True, "message": "Game aborted"}
+    except Exception as exc:
+        raise HTTPException(500, str(exc)) from exc
+
 
 @app.get("/status")
 def status():

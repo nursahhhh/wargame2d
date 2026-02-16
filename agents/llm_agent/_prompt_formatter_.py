@@ -132,11 +132,12 @@ class PromptFormatter:
 
         # SAM-specific
         if hasattr(entity, "is_toggled") or  isinstance(entity, SAM): 
+            print ("Sam was activated")
             caps["is_radar_active"] = getattr(entity, "is_toggled", False)
             caps["activation_range"] = getattr(entity, "activation_range", None)
             caps["can_shoot_when_active"] = getattr(entity, "can_shoot", False)
         return caps
-
+                                      
     # Nearby allies
   
     def _nearby_allies(

@@ -1,0 +1,232 @@
+{
+  "episode_id": 19,
+  "segment_id": 0,
+  "trigger_event": "ALLY_LOST",
+  "time_range": {
+    "start_step": 1,
+    "end_step": 6
+  },
+  "step_trace": [
+    {
+      "step": 1,
+      "context": {
+        "threat_level": null,
+        "visible_enemies": null,
+        "distance_to_objective": null
+      },
+      "decision": {
+        "actor": "blue",
+        "source": "llm",
+        "actions": {
+          "1": {
+            "type": "WAIT",
+            "params": {}
+          },
+          "4": {
+            "type": "WAIT",
+            "params": {}
+          },
+          "2": {
+            "type": "MOVE",
+            "params": {
+              "dir": "UP"
+            }
+          },
+          "3": {
+            "type": "MOVE",
+            "params": {
+              "dir": "DOWN"
+            }
+          },
+          "5": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          }
+        }
+      }
+    },
+    {
+      "step": 2,
+      "context": {
+        "threat_level": null,
+        "visible_enemies": null,
+        "distance_to_objective": null
+      },
+      "decision": {
+        "actor": "blue",
+        "source": "llm",
+        "actions": {
+          "1": {
+            "type": "WAIT",
+            "params": {}
+          },
+          "4": {
+            "type": "WAIT",
+            "params": {}
+          },
+          "2": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          },
+          "3": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          },
+          "5": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          }
+        }
+      }
+    },
+    {
+      "step": 3,
+      "context": {
+        "threat_level": null,
+        "visible_enemies": null,
+        "distance_to_objective": null
+      },
+      "decision": {
+        "actor": "blue",
+        "source": "llm",
+        "actions": {
+          "2": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          },
+          "3": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          },
+          "5": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          }
+        }
+      }
+    },
+    {
+      "step": 4,
+      "context": {
+        "threat_level": null,
+        "visible_enemies": null,
+        "distance_to_objective": null
+      },
+      "decision": {
+        "actor": "blue",
+        "source": "llm",
+        "actions": {
+          "2": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          },
+          "3": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          },
+          "5": {
+            "type": "MOVE",
+            "params": {
+              "dir": "UP"
+            }
+          }
+        }
+      }
+    },
+    {
+      "step": 5,
+      "context": {
+        "threat_level": null,
+        "visible_enemies": null,
+        "distance_to_objective": null
+      },
+      "decision": {
+        "actor": "blue",
+        "source": "llm",
+        "actions": {
+          "2": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          },
+          "3": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          },
+          "5": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          }
+        }
+      }
+    },
+    {
+      "step": 6,
+      "context": {
+        "threat_level": null,
+        "visible_enemies": null,
+        "distance_to_objective": null
+      },
+      "decision": {
+        "actor": "blue",
+        "source": "llm",
+        "actions": {
+          "2": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          },
+          "3": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          },
+          "5": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outcome": {
+    "type": "ALLY_LOST",
+    "turn": 6,
+    "entity_id": 5,
+    "entity_type": "Decoy",
+    "last_position": [
+      11,
+      7
+    ],
+    "irreversible": true,
+    "severity": "HIGH"
+  },
+  "created_at": "2026-02-16T09:02:58.361624"
+}

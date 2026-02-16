@@ -1,0 +1,17 @@
+{
+  "episode_id": 26,
+  "segment_id": 5,
+  "trigger_event": "ALLY_LOST",
+  "failure_analysis": {
+    "entity_type": "Aircraft",
+    "tactical_error": "Moved RIGHT to position [9,2] without confirmed threat visibility, exposing to undetected enemy engagement.",
+    "combat_principle_violated": "Security (exposed maneuver without flank protection or reconnaissance).",
+    "engagement_context": {
+      "enemy_radar_overlap": true,
+      "friendly_support_overlap": false,
+      "within_enemy_sam_range": true
+    },
+    "avoid_rule": "Aircraft: Prohibit RIGHT moves when visible_enemies=None and no adjacent friendly support (within 1 grid unit).",
+    "confidence": 0.65
+  }
+}

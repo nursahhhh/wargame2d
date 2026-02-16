@@ -18,6 +18,39 @@ from .frame import Frame
 
 log = get_logger(__name__)
 
+def abort_episode(self):
+    """
+    Call this when UI closes the game manually.
+    """
+
+    if self._done:
+        return
+
+    early_outcome = self._evaluate_early_termination()
+
+    if not early_outcome:
+        early_outcome = {
+            "type": "MANUAL_ABORT",
+            "result": "INCOMPLETE",
+            "reason": "USER_TERMINATED"
+        }
+
+    self._done = True
+
+    self.memory_store.record_step({
+        "step": self.turn,
+        "event": "EPISODE_ABORTED",
+        "end_of_episode": True,
+        "result": early_outcome["result"],
+        "reason": early_outcome["reason"],
+    })
+
+    self.memory_store.flush_segment(
+        trigger_event=early_outcome["type"],
+        outcome=early_outcome,
+    )
+
+    log.info("Episode manually aborted")
 
 class GameRunner:
     """
@@ -64,11 +97,29 @@ class GameRunner:
         """
 
         if self._done:
-            if self._final_world is not None:
-                final_world = self._final_world
-                self._final_world = None
-                return Frame(world=final_world, done=True)
-            raise RuntimeError("Game is already finished")
+        
+            self._final_world = self._clone_world_with_observations(
+                self._state["world"]
+            )
+
+            self.memory_store.record_step({
+                "step": self.turn,
+                "event": "END_OF_EPISODE",
+                "end_of_episode": True,
+                "result": "ENV_TERMINAL"
+            })
+
+            self.memory_store.flush_segment(
+                trigger_event="EPISODE_END",
+                outcome={
+                    "result": "ENV_TERMINAL",
+                    "terminal": True,
+                },
+            )
+
+            log.info("Environment terminal reached")
+
+           
 
         injections = injections or {}
 
@@ -133,6 +184,30 @@ class GameRunner:
 
         for event in events:
             log.warning("Negative event detected: %s", event)
+            if not self._done:
+                early_outcome = self._evaluate_early_termination()
+
+                if early_outcome:
+                    self._done = True
+
+                    self.memory_store.record_step({
+                        "step": self.turn,
+                        "event": "EARLY_TERMINATION",
+                        "end_of_episode": True,
+                        "result": early_outcome["result"],
+                        "reason": early_outcome["reason"],
+                    })
+
+                    self.memory_store.flush_segment(
+                        trigger_event=early_outcome["type"],
+                        outcome=early_outcome,
+                    )
+
+                    log.info("Early termination triggered: %s", early_outcome)
+
+
+
+
             # Flush memory immediately for irreversible failures
             IRREVERSIBLE_SEVERITIES = {"HIGH", "CRITICAL"}
 
@@ -195,3 +270,41 @@ class GameRunner:
         clone = world.clone()
         SensorSystem().refresh_all_observations(clone)
         return clone
+    # --------------------------------------------------
+    # Early termination evaluation
+    # --------------------------------------------------
+    def _evaluate_early_termination(self) -> dict | None:
+        world: WorldState = self._state["world"]
+
+        blue_units = [u for u in world._entities if u.team == Team.BLUE and u.alive]
+        red_units = [u for u in world._entities if u.team == Team.RED and u.alive]
+
+        # You may need to adjust this depending on your unit model
+        blue_armed = [u for u in blue_units if getattr(u, "can_attack", False)]
+        red_armed = [u for u in red_units if getattr(u, "can_attack", False)]
+
+        # Case 1: both exhausted
+        if not blue_armed and not red_armed:
+            return {
+                "type": "EARLY_TIE",
+                "result": "TIE",
+                "reason": "NO_ARMED_UNITS_REMAIN"
+            }
+
+        # Case 2: blue collapsed
+        if not blue_armed:
+            return {
+                "type": "STRATEGIC_COLLAPSE",
+                "result": "LOSS",
+                "reason": "BLUE_NO_OFFENSIVE_CAPABILITY"
+            }
+
+        # Case 3: red collapsed
+        if not red_armed:
+            return {
+                "type": "STRATEGIC_COLLAPSE",
+                "result": "WIN",
+                "reason": "RED_NO_OFFENSIVE_CAPABILITY"
+            }
+
+        return None

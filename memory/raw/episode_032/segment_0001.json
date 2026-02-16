@@ -1,0 +1,22 @@
+{
+  "episode_id": 32,
+  "segment_id": 1,
+  "trigger_event": "EPISODE_END",
+  "time_range": {
+    "start_step": 5,
+    "end_step": 5
+  },
+  "step_trace": [
+    {
+      "step": 5,
+      "event": "END_OF_EPISODE",
+      "end_of_episode": true,
+      "result": "ENV_TERMINAL"
+    }
+  ],
+  "outcome": {
+    "result": "ENV_TERMINAL",
+    "terminal": true
+  },
+  "created_at": "2026-02-16T13:45:51.638778"
+}

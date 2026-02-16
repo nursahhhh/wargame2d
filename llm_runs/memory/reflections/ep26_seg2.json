@@ -1,0 +1,17 @@
+{
+  "episode_id": 26,
+  "segment_id": 2,
+  "trigger_event": "ALLY_LOST",
+  "failure_analysis": {
+    "entity_type": "FIGHTER",
+    "tactical_error": "Initiated SHOOT on target 7 at position [10,11] without concentrating allied fires or ensuring suppression, allowing enemy retaliation.",
+    "combat_principle_violated": "Concentration of Force",
+    "engagement_context": {
+      "enemy_radar_overlap": true,
+      "friendly_support_overlap": false,
+      "within_enemy_sam_range": false
+    },
+    "avoid_rule": "FIGHTER: Do not SHOOT if enemy_radar_overlap and no allied units targeting same enemy within 10 grid units.",
+    "confidence": 0.65
+  }
+}

@@ -24,7 +24,7 @@ class LLMClient:
 
         # Directly pass prompt string to agent.run
         result = asyncio.run(self.agent.run(user_prompt=prompt))
-        return result.result  # this part rthrows error fix llm calls !!!!
+        return result.output   # this part rthrows error fix llm calls !!!!
 
 
 

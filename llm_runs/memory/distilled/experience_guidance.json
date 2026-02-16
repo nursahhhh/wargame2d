@@ -1,0 +1,24 @@
+{
+  "experience_guidance": [
+    {
+      "rule": "Avoid MOVE RIGHT/UP or forward advances for FIGHTER, Aircraft, Decoy if friendly_support_overlap=False, especially at x>=10.",
+      "rationale": "Isolated advances expose units to enemy engagement without protection; seen in 70% of reflections.",
+      "confidence": 0.9
+    },
+    {
+      "rule": "Avoid SHOOT for FIGHTER/Aircraft if friendly_support_overlap=False and enemy_radar_overlap=True.",
+      "rationale": "Solo shooting draws counterfire without suppression; recurrent in exposed positions.",
+      "confidence": 0.85
+    },
+    {
+      "rule": "Avoid formation divergence (orthogonal MOVE directions from allies) without shared target or support.",
+      "rationale": "Breaks mutual support, leading to isolated overextension; multiple fighter/decoy cases.",
+      "confidence": 0.8
+    },
+    {
+      "rule": "Avoid SHOOT for SAM unless visible_enemies confirmed and friendly_support_overlap=True.",
+      "rationale": "Premature firing reveals fixed position without cover; firing discipline violation.",
+      "confidence": 0.7
+    }
+  ]
+}

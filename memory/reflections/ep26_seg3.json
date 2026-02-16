@@ -1,0 +1,17 @@
+{
+  "episode_id": 26,
+  "segment_id": 3,
+  "trigger_event": "ALLY_LOST",
+  "failure_analysis": {
+    "entity_type": "FIGHTER",
+    "tactical_error": "Entity 2 executed MOVE LEFT, positioning at [10,10] into undetected enemy engagement zone.",
+    "combat_principle_violated": "Principle of security (maneuver without threat reconnaissance)",
+    "engagement_context": {
+      "enemy_radar_overlap": false,
+      "friendly_support_overlap": false,
+      "within_enemy_sam_range": true
+    },
+    "avoid_rule": "FIGHTER: Prohibit LEFT/RIGHT moves projecting to central grid [10,*] or [*,10] absent visible_enemies.",
+    "confidence": 0.3
+  }
+}

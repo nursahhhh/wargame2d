@@ -1,0 +1,17 @@
+{
+  "episode_id": 9,
+  "segment_id": 0,
+  "trigger_event": "ALLY_LOST",
+  "failure_analysis": {
+    "entity_type": "Aircraft",
+    "tactical_error": "Entity ID 2 advanced via repeated lateral maneuvers (LEFT then RIGHT) into exposed position [3,3], then initiated SHOOT on enemy ID 7 without synchronized friendly fire convergence or cover, enabling enemy counter-detection and kill.",
+    "combat_principle_violated": "Mutual support",
+    "engagement_context": {
+      "enemy_radar_overlap": true,
+      "friendly_support_overlap": false,
+      "within_enemy_sam_range": false
+    },
+    "avoid_rule": "Aircraft must not execute SHOOT when at grid position with no adjacent friendly Aircraft/SAM (within 1 tile Manhattan distance) and visible enemy aircraft present.",
+    "confidence": 0.4
+  }
+}
