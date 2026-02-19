@@ -1,0 +1,102 @@
+{
+  "episode_id": 40,
+  "segment_reflections": [
+    {
+      "segment_id": 0,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "FIGHTER",
+        "tactical_error": "Isolated fighter #3 at [6,4] moved RIGHT toward enemy #8 at [9,2] (dist 3.6 <= missile range 4), forgoing SHOOT despite high pressure and no nearby allies, exposing itself without local fire superiority.",
+        "combat_principle_violated": "Mutual support",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "FIGHTER: If no nearby_allies (isolated, pressure HIGH) and any nearby_enemy dist <= missile_max_range (4) with our_hit_prob >=0.16 and enemy dist > friendly SAM radar_range (5) from SAM position, prioritize SHOOT on highest threat_score enemy over MOVE.",
+        "confidence": 0.92
+      }
+    },
+    {
+      "segment_id": 1,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "AIRCRAFT",
+        "tactical_error": "Moved closer to isolated high-threat enemy aircraft (dist 2.24 < radar_range 4) without nearby ally support or SAM radar coverage, increasing vulnerability from 2.82 to 2.24 distance.",
+        "combat_principle_violated": "Mutual Support",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "For AIRCRAFT: If no allies within distance 3.0 and enemy aircraft detected within radar_range (4.0), avoid MOVE directions reducing distance to enemy; prioritize RETREAT or WAIT for convergence.",
+        "confidence": 0.95
+      }
+    },
+    {
+      "segment_id": 2,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "DECOY",
+        "tactical_error": "Repeated RIGHT moves from [4,5] to [6,5], reducing distance to enemy aircraft ID8 from 3.16 to 2.24 units while increasing separation from SAM ID4 to 3.16 units, entering isolation with two nearby enemies (ID7 at 4.12, ID8 at 2.24) under HIGH pressure without active SAM radar or fire support.",
+        "combat_principle_violated": "Mutual support: assets must maintain proximity for overlapping coverage and protection.",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "DECOY: if nearby_enemies exist within distance 4.0 and no nearby_allies within distance 2.5 (especially SAM), and not grouped_with_allies, then do not MOVE away from SAM position; prioritize MOVE towards SAM or WAIT.",
+        "confidence": 0.95
+      }
+    },
+    {
+      "segment_id": 0,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "AIRCRAFT",
+        "tactical_error": "Isolated AIRCRAFT (ID 3) at [6,4] maneuvered laterally LEFT from [7,4] into 3.6-unit range of enemy ID 8 at [9,2] without firing, while enemy was beyond SAM ID 4 range (7.2 units from [3,6]), exposing to unsupported engagement.",
+        "combat_principle_violated": "Mutual support",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "AIRCRAFT: If no nearby_allies (dist <= radar_range) and HIGH pressure, do not MOVE to reduce dist <=4 to enemy unless that enemy is within >=1 friendly SAM radar_range (5 units).",
+        "confidence": 0.92
+      }
+    },
+    {
+      "segment_id": 1,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "AIRCRAFT",
+        "tactical_error": "Isolated AIRCRAFT at [7,8] moved RIGHT from [6,8] then UP, reducing distance to enemy AIRCRAFT at [8,10] from 2.83 to 2.24 units (within mutual missile range of 4), without nearby allies for support.",
+        "combat_principle_violated": "Mutual support",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": true,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "AIRCRAFT: if no nearby_allies and enemy AIRCRAFT distance < missile_max_range with HIGH pressure, do not MOVE towards enemy; select RETREAT or WAIT.",
+        "confidence": 0.95
+      }
+    },
+    {
+      "segment_id": 2,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "DECOY",
+        "tactical_error": "Decoy (id 5) executed consecutive MOVE RIGHT actions from [4,5] to [5,5] to [6,5], increasing distance to protecting SAM (id 4 at [3,6]) from 1.41 to 2.24 to 3.16, exiting 'nearby_allies' threshold and grouped_with_allies status while entering high-pressure zone with enemy aircraft id 8 at [8,4] (dist 2.24 within decoy radar 2.0).",
+        "combat_principle_violated": "Mutual support - decoy operated outside SAM protective envelope.",
+        "engagement_context": {
+          "enemy_radar_overlap": false,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "DECOY: If distance_to_nearest_SAM > 2.5 OR grouped_with_allies=False AND nearby_enemies exists within radar_range=2.0, select WAIT or MOVE towards SAM position.",
+        "confidence": 0.95
+      }
+    }
+  ],
+  "episode_analysis": null
+}

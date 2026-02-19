@@ -1,0 +1,38 @@
+{
+  "episode_id": 50,
+  "segment_reflections": [
+    {
+      "segment_id": 0,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "DECOY",
+        "tactical_error": "DECOY ID5 advanced to [11,6] via repeated RIGHT moves, outpacing AIRCRAFT ID2/ID3 (at col8) and exceeding their radar_range(4) at dist~4.24, entering HIGH pressure with two RED AIRCRAFT at dist~3.16 without nearby_allies or coverage.",
+        "combat_principle_violated": "Mutual support",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "DECOY: If no nearby_allies and dist to nearest AIRCRAFT >4.0 with nearby_enemies, do not MOVE increasing x-difference to AIRCRAFT; instead MOVE towards nearest AIRCRAFT or WAIT.",
+        "confidence": 0.95
+      }
+    },
+    {
+      "segment_id": 1,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "AIRCRAFT",
+        "tactical_error": "Isolated aircraft closed distance to enemy aircraft from 3 to 2 units by moving RIGHT twice, entering high-risk engagement range without support while under HIGH pressure.",
+        "combat_principle_violated": "Avoid isolated 1v1 engagements against peer threats; maintain standoff or seek mutual support.",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "AIRCRAFT: If no nearby allies (distance >4) and enemy AIRCRAFT detected at distance <=3 with threat_score=1.0, do not MOVE towards enemy; select LEFT/DOWN/UP or HOLD.",
+        "confidence": 0.95
+      }
+    }
+  ],
+  "episode_analysis": null
+}

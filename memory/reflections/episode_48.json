@@ -1,0 +1,22 @@
+{
+  "episode_id": 48,
+  "segment_reflections": [
+    {
+      "segment_id": 0,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "DECOY",
+        "tactical_error": "Decoy (ID 5) advanced to [10,7] directly adjacent to clustered enemy aircraft at [11,5],[11,6],[11,7] (distances 2.24,1.41,1.00) without nearby allies or covering fire, exposing it to concentrated enemy engagement.",
+        "combat_principle_violated": "Avoid isolated exposure; maintain support overlap before closing with enemies.",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "DECOY: if nearby_enemies >=2 and pressure=='HIGH' and no nearby_allies within distance<=4 and position x>=8 (right flank advance), then MOVE 'LEFT' or WAIT.",
+        "confidence": 0.95
+      }
+    }
+  ],
+  "episode_analysis": null
+}

@@ -1,0 +1,145 @@
+{
+  "episode_id": 47,
+  "segment_reflections": [
+    {
+      "segment_id": 0,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "FIGHTER",
+        "tactical_error": "Targeted distant enemy ID 8 (dist 3.6, hit_prob ~0.17) instead of proximate high-threat enemy ID 9 (dist 1.0, our_hit_prob 0.625) at point-blank range within mutual radar detection.",
+        "combat_principle_violated": "Prioritize nearest/immediate threat",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "For FIGHTER: if nearest_enemy_distance <= 2 and our_hit_prob >= 0.5 on nearest enemy, SHOOT nearest_enemy_id; else if multiple targets, select max(our_hit_prob / distance).",
+        "confidence": 0.95
+      }
+    },
+    {
+      "segment_id": 1,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "FIGHTER",
+        "tactical_error": "SHOT at distant enemy ID 8 (dist 3.61) while proximate high-threat enemy ID 9 (dist 1.0, our_hit_prob 0.625) was within 25% of missile range.",
+        "combat_principle_violated": "Prioritize closest threat engagement",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": true,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "FIGHTER with enemy within dist 2.0 must SHOOT nearest enemy in radar_range if our_hit_prob > 0.3, ignore targets > dist 3.0",
+        "confidence": 0.95
+      }
+    },
+    {
+      "segment_id": 2,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "DECOY",
+        "tactical_error": "Moved RIGHT from [4,6] to [4,7], maintaining 2.24-unit distance to grouped enemy AIRCRAFT (ID 9 at [6,6]) under HIGH pressure, without proximate SAM (ID 4 at [3,6], dist 1.41, radar inactive) or AIRCRAFT (ID 2 at [4,8], dist 1.0) engaging via SHOOT.",
+        "combat_principle_violated": "Maneuver without suppressive fire support",
+        "engagement_context": {
+          "enemy_radar_overlap": false,
+          "friendly_support_overlap": true,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "DECOY: if pressure HIGH and nearest enemy AIRCRAFT dist <= 2.5 and grouped_with_allies with SAM/AIRCRAFT within 2.5 units but no SHOOT action targeting it, then WAIT",
+        "confidence": 0.88
+      }
+    },
+    {
+      "segment_id": 3,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "DECOY",
+        "tactical_error": "Moved LEFT laterally at [5,7] with enemy aircraft at [5,6] (dist 1.0), shifting from vertical alignment to diagonal exposure (projected dist 1.41) without evading point-blank threat under high pressure.",
+        "combat_principle_violated": "Evasion over maneuver when unsupportable in close range",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": true,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "DECOY: if dist to nearest enemy AIRCRAFT <= radar_range (2.0) and pressure HIGH and no nearby SAM/AIRCRAFT (dist <=3.0) SHOOTING threat (hit_prob >=0.5), then MOVE in direction maximizing distance to that enemy.",
+        "confidence": 0.85
+      }
+    },
+    {
+      "segment_id": 4,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "FIGHTER",
+        "tactical_error": "Sustained SHOOT actions against nearby enemy aircraft #9 at distances 1.0-1.41 units over steps 16-18, remaining stationary at [3,7] adjacent to threat while SAM #4 at [3,6] (dist 1.0) had superior hit probability (0.66) but targeted distant enemy #8 instead.",
+        "combat_principle_violated": "Mutual fire support - prioritized individual engagement over coordinating with co-located SAM for threat overmatch.",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": true,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "If FIGHTER dist to enemy <=1.5 and SAM ally dist to same enemy <=2.0 with SAM our_hit_prob >=0.5 and pressure HIGH, then WAIT instead of SHOOT.",
+        "confidence": 0.9
+      }
+    },
+    {
+      "segment_id": 5,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "AIRCRAFT",
+        "tactical_error": "Moved RIGHT from [3,8] towards enemy aircraft at [5,10] (reducing distance from 2.82 to ~2.23), exposing itself under HIGH pressure (value 1.0) with nearby enemy threat score 1.0, while adjacent SAM (dist 2.0, missile range coverage) and self waited on fire.",
+        "combat_principle_violated": "Mutual support before maneuver",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": true,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "AIRCRAFT within 3.0 dist of enemy aircraft and HIGH pressure (>0.8), with SAM ally within 2.5 dist and enemy within SAM missile range: prohibit MOVE dirs reducing dist-to-enemy.",
+        "confidence": 0.9
+      }
+    },
+    {
+      "segment_id": 6,
+      "trigger_event": "STRATEGIC_COLLAPSE",
+      "failure_analysis": {
+        "entity_type": "SAM",
+        "tactical_error": "Persisted with WAIT actions across steps 22-24 while enemy AIRCRAFT remained within missile range (distances 4.47\u21924.0\u21924.12) with our_hit_prob 0.17\u21920.24\u21920.22, failing to generate any offensive missile launches despite sustained HIGH pressure.",
+        "combat_principle_violated": "Exploit firepower superiority against high-threat targets within weapons engagement zone.",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": true,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "SAM: When enemy AIRCRAFT distance <=5 (radar_range) and our_hit_prob >=0.2 and pressure HIGH with AWACS distance <=3, execute SHOOT.",
+        "confidence": 0.9
+      }
+    },
+    {
+      "segment_id": 7,
+      "trigger_event": "EPISODE_END",
+      "failure_analysis": {
+        "entity_type": "FIGHTER",
+        "tactical_error": "Fighter operated in isolation within enemy radar detection envelope, exposed to SAM engagement without suppressive support or standoff positioning.",
+        "combat_principle_violated": "Mutual support",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": true
+        },
+        "avoid_rule": "FIGHTER: Abort advance if enemy radar overlap occurs without friendly AWACS/SAM coverage overlap within 50km radius.",
+        "confidence": 0.2
+      }
+    }
+  ],
+  "episode_analysis": {
+    "systemic_failures": "Asset misallocation saw offensive aircraft and decoy dispersed across north-south axis without convergence, SAM radar remained inactive throughout, and AWACS stayed static on left flank failing to provide dynamic oversight. Radar layering absent: no overlap between AWACS (9 range), SAM (5 inactive), and short-range aircraft radars (4). Information dominance lost as Red grouped centrally while Blue vision fragmented without AWACS repositioning.",
+    "offensive_collapse_cause": "Both aircraft lost in isolated close-range engagements (ID3 steps 11-12, ID2 steps 20-21) due to lack of mutual support; decoys sacrificed piecemeal without offensive backup, leaving only unarmed/defensive assets and triggering NO_OFFENSIVE_CAPABILITY.",
+    "coordination_breakdowns": "No formation flying or rally points; aircraft diverged (north/south pushes), decoy solo advanced into threats, defensive cluster (AWACS/SAM) never integrated with mobiles; late sporadic shooting without concentrated volleys.",
+    "global_avoid_principles": [
+      "Maintain offensive assets in tight, mutually supporting clusters before advancing to ensure overlapping fires and evasion aid.",
+      "Layer radars proactively: position AWACS forward for wide-area cueing, activate SAM radars under cover, chain short-range assets.",
+      "Never deploy decoys or scouts unsupported; pair with armed overwatch.",
+      "Dynamically reposition information assets (AWACS) to contest enemy approach axes and restore dominance."
+    ],
+    "confidence": 0.95
+  }
+}

@@ -5,6 +5,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, TYPE_CHECKING
+from dotenv import load_dotenv
 
 from env.core.actions import Action
 from env.core.types import Team, ActionType
@@ -18,7 +19,7 @@ from ._prompt_formatter_ import PromptFormatter, PromptConfig
 if TYPE_CHECKING:
     from env.environment import StepInfo
 
-
+load_dotenv()
 # ============================================================
 # TOOL DEFINITION
 # ============================================================
@@ -99,7 +100,7 @@ def call_openrouter(prompt: str, model: str, api_key: str, step: int,    run_log
             "type": "function",
             "function": {"name": "select_actions"}
         },
-        "temperature": 0.1,
+        "temperature": 0.0,
 
     }
 
@@ -237,218 +238,294 @@ class LLMHybridAgent(BaseAgent):
         return final_actions, metadata
 
 
+
+
+    def build_experience_advisory_section(
+        self,           
+        path: str,
+        min_confidence: float = 0.7,
+        max_rules: int = 8
+    ) -> str:
+        """
+        Reads distilled experience file and converts it into a
+        properly formatted LLM advisory section.
+
+        Args:
+            file_path: Path to distilled experience JSON file
+            min_confidence: Minimum confidence threshold
+            max_rules: Maximum number of rules to include
+
+        Returns:
+            Formatted advisory string for prompt injection
+        """
+        BASE_DIR = Path(__file__).resolve().parents[3]  # adjust if needed
+        file_path = BASE_DIR / path
+
+        # Prevent crash if file missing
+        if not file_path.exists():
+            print(f"[WARNING] Experience file not found: {file_path}")
+            return ""
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:
+            print(f"[ERROR] Failed to load experience file: {e}")
+            return ""
+
+        rules: List[Dict] = data.get("experience_guidance", [])
+
+        # Filter by confidence
+        rules = [r for r in rules if r.get("confidence", 0) >= min_confidence]
+
+        # Sort by confidence (highest first)
+        rules.sort(key=lambda x: x.get("confidence", 0), reverse=True)
+
+        # Limit number of rules
+        rules = rules[:max_rules]
+
+        if not rules:
+            return ""  # No advisory section if nothing qualifies
+
+        # Build advisory text
+        advisory_lines = []
+        advisory_lines.append("============================================================")
+        advisory_lines.append("EXPERIENCE-BASED ADVISORY HEURISTICS")
+        advisory_lines.append("============================================================\n")
+        advisory_lines.append(
+            "The following patterns were extracted from past reflections."
+        )
+        advisory_lines.append(
+            "They are STRATEGIC ADVISORIES and must NOT override:"
+        )
+        advisory_lines.append("  - HARD constraints")
+        advisory_lines.append("  - FIRM constraints")
+        advisory_lines.append("  - Mission priorities\n")
+        advisory_lines.append("Use them only when multiple valid actions exist.\n")
+        advisory_lines.append("Advisories (sorted by confidence):\n")
+
+        for rule in rules:
+            confidence = round(rule.get("confidence", 0), 2)
+            advisory_lines.append(f"[Confidence: {confidence}]")
+            advisory_lines.append(f"Guideline: {rule.get('rule', '')}")
+            advisory_lines.append(f"Rationale: {rule.get('rationale', '')}\n")
+
+        return "\n".join(advisory_lines)
+
     # --------------------------------------------------------
     # PROMPT CONTEXT
     # --------------------------------------------------------
 
     def _build_context_prompt(self, current_prompt: str) -> str:
         history_text = "\n\n".join(self.recent_history[-self.memory_window:])
-
+        experience_avoidance = self.build_experience_advisory_section("wargame2d/llm_runs/memory/distilled/experience_guidance.json")
         combined = f"""
 
-You are a tactical AI commander controlling friendly units in a 2D combat grid:
-AWACS, Aircraft, Decoys, and SAM sites.
+        You are a tactical AI commander controlling friendly units in a 2D combat grid:
+        AWACS, Aircraft, Decoys, and SAM sites.
 
- All cells within range of: Friendly AWACS radar OR active SAM radar
-  - This coverage is SHARED among all friendly units instantly
-============================================================
-MISSION OBJECTIVES (Ordered by Priority)
-============================================================
-P1. PROTECT FRIENDLY AWACS — Survival is absolute. Never compromise.
-P2. DESTROY ENEMY AWACS — Terminal win condition.
-P3. AVOID DETECTION — Stay outside enemy radar; deny interception.
-P4. GAIN INFORMATION — Explore TEAM-UNSEEN areas (conditional).
-P5. ACHIEVE NUMERICAL ADVANTAGE — Coordinate SAM + aircraft.
-P6. ENGAGE IN COMBAT — Prefer engagements that improve force advantage.
+        All cells within range of: Friendly AWACS radar OR active SAM radar
+        - This coverage is SHARED among all friendly units instantly
+        ============================================================
+        MISSION OBJECTIVES (Ordered by Priority)
+        ============================================================
+        P1. PROTECT FRIENDLY AWACS — Survival is absolute. Never compromise.
+        P2. DESTROY ENEMY AWACS — Terminal win condition.
+        P3. AVOID DETECTION — Stay outside enemy radar; deny interception.
+        P4. GAIN INFORMATION — Explore TEAM-UNSEEN areas (conditional).
+        P5. ACHIEVE NUMERICAL ADVANTAGE — Coordinate SAM + aircraft.
+        P6. ENGAGE IN COMBAT — Prefer engagements that improve force advantage.
 
-Priority P4 (Exploration) activates ONLY when:
-  - Enemy AWACS is NOT currently detected
-  - AND TEAM-UNSEEN cells exist outside friendly sensor coverage
+        Priority P4 (Exploration) activates ONLY when:
+        - Enemy AWACS is NOT currently detected
+        - AND TEAM-UNSEEN cells exist outside friendly sensor coverage
 
-Lower priorities MUST NOT override higher priorities.
+        Lower priorities MUST NOT override higher priorities.
 
-============================================================
-GAME STATE (Provided Each Turn)
-============================================================
-You will receive:
-- Grid dimensions and boundaries
-- All friendly unit positions, types, states (armed/unarmed, radar on/off)
-- Known enemy unit positions (if detected)
-- TEAM-SEEN cells: observed by ANY friendly unit at ANY time
-- TEAM-UNSEEN cells: never observed by any friendly unit
-- Friendly radar coverage (AWACS + active SAMs)
-- Estimated/known enemy radar coverage
-- Turn number
+        ============================================================
+        GAME STATE (Provided Each Turn)
+        ============================================================
+        You will receive:
+        - Grid dimensions and boundaries
+        - All friendly unit positions, types, states (armed/unarmed, radar on/off)
+        - Known enemy unit positions (if detected)
+        - TEAM-SEEN cells: observed by ANY friendly unit at ANY time
+        - TEAM-UNSEEN cells: never observed by any friendly unit
+        - Friendly radar coverage (AWACS + active SAMs)
+        - Estimated/known enemy radar coverage
+        - Turn number
 
-============================================================
-CONSTRAINT CLASSIFICATION
-============================================================
-HARD constraints — Never violate under any circumstance:
-  [H1] AWACS must NEVER enter known enemy radar coverage
-  [H2] AWACS must NEVER end turn with zero safe escape routes
-  [H3] Actions that guarantee AWACS destruction next turn are FORBIDDEN
-  [H4] Exploration inside friendly radar coverage is INVALID
-  [H5] Re-labeling invalid exploration as DEFEND/SUPPORT is FORBIDDEN
+        ============================================================
+        CONSTRAINT CLASSIFICATION
+        ============================================================
+        HARD constraints — Never violate under any circumstance:
+        [H1] AWACS must NEVER enter known enemy radar coverage
+        [H2] AWACS must NEVER end turn with zero safe escape routes
+        [H3] Actions that guarantee AWACS destruction next turn are FORBIDDEN
+        [H4] Exploration inside friendly radar coverage is INVALID
+        [H5] Re-labeling invalid exploration as DEFEND/SUPPORT is FORBIDDEN
 
-FIRM constraints — Violate only to satisfy HARD constraints:
-  [F1] AWACS should maintain 2+ cell buffer from enemy radar edge
-  [F2] AWACS should stay behind combat units (layered protection)
-  [F3] Aircraft should not WAIT when enemy AWACS is detected
-  [F4] At least one unit should advance exploration each turn (when P4 active)
+        FIRM constraints — Violate only to satisfy HARD constraints:
+        [F1] AWACS should maintain 2+ cell buffer from enemy radar edge
+        [F2] AWACS should stay behind combat units (layered protection)
+        [F3] Aircraft should not WAIT when enemy AWACS is detected
+        [F4] At least one unit should advance exploration each turn (when P4 active)
 
-SOFT constraints — Preferences, not requirements:
-  [S1] Prefer 2v1+ engagements over fair fights
-  [S2] Prefer lateral/backward AWACS movement over forward
-  [S3] Prefer SAM ON for area denial
-  [S4] Avoid boundary-hugging paths for AWACS
+        SOFT constraints — Preferences, not requirements:
+        [S1] Prefer 2v1+ engagements over fair fights
+        [S2] Prefer lateral/backward AWACS movement over forward
+        [S3] Prefer SAM ON for area denial
+        [S4] Avoid boundary-hugging paths for AWACS
 
-============================================================
-ADVANTAGE DEVELOPMENT RULE
-============================================================
+        ============================================================
+        ADVANTAGE DEVELOPMENT RULE
+        ============================================================
 
-If immediate engagement does not yield clear local advantage:
+        If immediate engagement does not yield clear local advantage:
 
-  The unit MUST execute one of the following:
+        The unit MUST execute one of the following:
 
-  - Reposition to create multi-unit convergence
-  - Move to overlap with friendly SAM coverage
-  - Constrain enemy movement corridor
-  - Improve radar coverage geometry
-  - Reduce own exposure while preserving pressure
+        - Reposition to create multi-unit convergence
+        - Move to overlap with friendly SAM coverage
+        - Constrain enemy movement corridor
+        - Improve radar coverage geometry
+        - Reduce own exposure while preserving pressure
 
-Passive retreat without strategic improvement is discouraged.
-Inaction is not acceptable when advantage can be developed.
+        Passive retreat without strategic improvement is discouraged.
+        Inaction is not acceptable when advantage can be developed.
 
-============================================================
-UNIT CAPABILITIES
-============================================================
-AWACS:
-  - Actions: MOVE, WAIT
-  - Radar: Provides wide-area friendly sensor coverage
-  - Rules: Apply all HARD constraints strictly
+        ============================================================
+        UNIT CAPABILITIES
+        ============================================================
+        AWACS:
+        - Actions: MOVE, WAIT
+        - Radar: Provides wide-area friendly sensor coverage
+        - Rules: Apply all HARD constraints strictly
 
-Aircraft:
-  - Actions: MOVE, SHOOT (if armed and target in range), WAIT
-  - Role: Escort, exploration, interception, terminal attack
-  - When enemy AWACS detected: MUST advance or constrain escape
+        Aircraft:
+        - Actions: MOVE, SHOOT (if armed and target in range), WAIT
+        - Role: Escort, exploration, interception, terminal attack
+        - When enemy AWACS detected: MUST advance or constrain escape
 
-Decoy:
-  - Actions: MOVE, WAIT
-  - Role: Expendable scouting, deception, shot absorption
-  - May sacrifice for strategic gain, but not for zero value
+        Decoy:
+        - Actions: MOVE, WAIT
+        - Role: Expendable scouting, deception, shot absorption
+        - May sacrifice for strategic gain, but not for zero value
 
-SAM:
-  - Actions:Shoot, Toggle, Wait.
-  - Role: Static area denial; range advantage over aircraft
-  - Default: ON (for area control), OFF only for ambush/cooldown
+        SAM:
+        - Actions:Shoot, Toggle, Wait.
+        - Role: Static area denial; range advantage over aircraft
+        - Default: ON (for area control), OFF only for ambush/cooldown
 
-============================================================
-SHARED INTELLIGENCE (Team Sensor Fusion)
-============================================================
-- All units share a SINGLE GLOBAL KNOWLEDGE MAP
-- A cell is TEAM-SEEN if observed by ANY friendly unit, ever
-- Individual unit perception is IRRELEVANT for exploration decisions
-- Cells inside friendly AWACS/SAM radar have ZERO exploration value
-- Exploration targets must be TEAM-UNSEEN AND outside friendly radar
+        ============================================================
+        SHARED INTELLIGENCE (Team Sensor Fusion)
+        ============================================================
+        - All units share a SINGLE GLOBAL KNOWLEDGE MAP
+        - A cell is TEAM-SEEN if observed by ANY friendly unit, ever
+        - Individual unit perception is IRRELEVANT for exploration decisions
+        - Cells inside friendly AWACS/SAM radar have ZERO exploration value
+        - Exploration targets must be TEAM-UNSEEN AND outside friendly radar
 
-============================================================
-DECISION RULES BY SITUATION
-============================================================
+        ============================================================
+        DECISION RULES BY SITUATION
+        ============================================================
 
-IF enemy AWACS is DETECTED:
-  → P2 activates: All aircraft MUST reduce distance or block escape
-  → WAIT/RETREAT forbidden for armed aircraft
-  → Ignore exploration; prioritize kill
+        IF enemy AWACS is DETECTED:
+        → P2 activates: All aircraft MUST reduce distance or block escape
+        → WAIT/RETREAT forbidden for armed aircraft
+        → Ignore exploration; prioritize kill
 
-IF friendly AWACS is THREATENED (enemy closing or radar encroaching):
-  → P1 activates: Abort lower priorities immediately
-  → AWACS moves to maximize radar separation
-  → Aircraft may intercept or screen
+        IF friendly AWACS is THREATENED (enemy closing or radar encroaching):
+        → P1 activates: Abort lower priorities immediately
+        → AWACS moves to maximize radar separation
+        → Aircraft may intercept or screen
 
-IF neither AWACS is detected AND TEAM-UNSEEN cells exist:
-  → P4 activates: At least ONE unit MUST explore
-  → Select highest-uncertainty regions first
-  → Aircraft/decoys reposition toward TEAM-UNSEEN boundaries
-  → WAIT is FORBIDDEN if exploration-enabling move exists
+        IF neither AWACS is detected AND TEAM-UNSEEN cells exist:
+        → P4 activates: At least ONE unit MUST explore
+        → Select highest-uncertainty regions first
+        → Aircraft/decoys reposition toward TEAM-UNSEEN boundaries
+        → WAIT is FORBIDDEN if exploration-enabling move exists
 
-IF all exploration moves are blocked by constraints:
-  → Reposition toward the BOUNDARY of known space
-  → This enables future exploration access
-  → Log this as reason_tag: REPOSITION_FOR_EXPLORATION
+        IF all exploration moves are blocked by constraints:
+        → Reposition toward the BOUNDARY of known space
+        → This enables future exploration access
+        → Log this as reason_tag: REPOSITION_FOR_EXPLORATION
 
-============================================================
-CONFLICT RESOLUTION (When Constraints Collide)
-============================================================
-1. Always satisfy HARD constraints first
-2. Satisfy as many FIRM constraints as possible without violating HARD
-3. Among remaining options, prefer those satisfying SOFT constraints
-4. If ALL actions violate at least one constraint:
-   → Choose the action that violates the LOWEST priority constraint
-   → Flag reason_tag with: FORCED_CONSTRAINT_VIOLATION
+        ============================================================
+        CONFLICT RESOLUTION (When Constraints Collide)
+        ============================================================
+        1. Always satisfy HARD constraints first
+        2. Satisfy as many FIRM constraints as possible without violating HARD
+        3. Among remaining options, prefer those satisfying SOFT constraints
+        4. If ALL actions violate at least one constraint:
+        → Choose the action that violates the LOWEST priority constraint
+        → Flag reason_tag with: FORCED_CONSTRAINT_VIOLATION
 
-============================================================
-ANTI-EXPLOIT RULES
-============================================================
-- Exploration claimed inside friendly radar = INVALID (H4)
-- DEFEND_AWACS near AWACS when effect is exploration = INVALID (H5)
-- Adversarial safety check: If move is safe now but unsafe after
-  obvious enemy response, treat it as UNSAFE
-- Edge-hugging or corner moves for AWACS are high-risk
-- No laundering invalid actions through alternate reason_tags
+        ============================================================
+        ANTI-EXPLOIT RULES
+        ============================================================
+        - Exploration claimed inside friendly radar = INVALID (H4)
+        - DEFEND_AWACS near AWACS when effect is exploration = INVALID (H5)
+        - Adversarial safety check: If move is safe now but unsafe after
+        obvious enemy response, treat it as UNSAFE
+        - Edge-hugging or corner moves for AWACS are high-risk
+        - No laundering invalid actions through alternate reason_tags
 
-============================================================
-OUTPUT FORMAT
-============================================================
+        {experience_avoidance}
 
-Respond with valid JSON matching the provided function schema.
+        ============================================================
+        OUTPUT FORMAT
+        ============================================================
 
-BEFORE calling the function, you MUST internally evaluate:
-  - Threat exposure
-  - Engagement advantage
-  - Coordination potential
+        Respond with valid JSON matching the provided function schema.
 
-For each selected action:
+        BEFORE calling the function, you MUST internally evaluate:
+        - Threat exposure
+        - Engagement advantage
+        - Coordination potential
 
-- Select AT MOST ONE action per unit
-- Include a reason_tag for EVERY action
-- Include a reasoning object for EVERY action with:
+        For each selected action:
 
-    {{
-      "threat_level": 0–10,
-      "exposure_risk": 0–10,
-      "advantage_gain": 0–10,
-      "coordination_value": 0–10,
-      "justification": "Short tactical explanation"
-    }}
+        - Select AT MOST ONE action per unit
+        - Include a reason_tag for EVERY action
+        - Include a reasoning object for EVERY action with:
 
-- Omit units that should WAIT (or explicitly include WAIT)
+            {{
+            "threat_level": 0–10,
+            "exposure_risk": 0–10,
+            "advantage_gain": 0–10,
+            "coordination_value": 0–10,
+            "justification": "Short tactical explanation"
+            }}
 
-Actions that increase exposure_risk above 6 without
-advantage_gain above 6 are invalid.
+        - Omit units that should WAIT (or explicitly include WAIT)
 
-Allowed reason_tags:
-  - PROTECT_AWACS         (escorting, screening, retreating AWACS)
-  - INTERCEPT_THREAT      (moving to block/engage approaching enemy)
-  - ATTACK_ENEMY_AWACS    (terminal attack execution)
-  - EXPLORE_UNSEEN        (advancing into TEAM-UNSEEN space)
-  - REPOSITION_FOR_EXPLORATION (moving toward UNSEEN boundary)
-  - AREA_DENIAL           (SAM toggling, zone control)
-  - DECOY_SACRIFICE       (intentional expendable action)
-  - AWAIT_OPPORTUNITY     (justified WAIT with no better option)
-  - FORCED_CONSTRAINT_VIOLATION (when no fully legal action exists
+        Actions that increase exposure_risk above 6 without
+        advantage_gain above 6 are invalid.
 
-====================================================
-RECENT HISTORY
-====================================================
-{history_text}
+        Allowed reason_tags:
+        - PROTECT_AWACS         (escorting, screening, retreating AWACS)
+        - INTERCEPT_THREAT      (moving to block/engage approaching enemy)
+        - ATTACK_ENEMY_AWACS    (terminal attack execution)
+        - EXPLORE_UNSEEN        (advancing into TEAM-UNSEEN space)
+        - REPOSITION_FOR_EXPLORATION (moving toward UNSEEN boundary)
+        - AREA_DENIAL           (SAM toggling, zone control)
+        - DECOY_SACRIFICE       (intentional expendable action)
+        - AWAIT_OPPORTUNITY     (justified WAIT with no better option)
+        - FORCED_CONSTRAINT_VIOLATION (when no fully legal action exists
 
-====================================================
-CURRENT SITUATION
-====================================================
-{current_prompt}
+        ====================================================
+        RECENT HISTORY
+        ====================================================
+        {history_text}
 
-Respond ONLY with valid JSON.
-"""
+        ====================================================
+        CURRENT SITUATION
+        ====================================================
+        {current_prompt}
+
+        Respond ONLY with valid JSON.
+        """
 
         self.recent_history.append(current_prompt)
 
@@ -474,6 +551,7 @@ Respond ONLY with valid JSON.
         try:
             data = json.loads(llm_args)
         except Exception:
+            print("EXCEPTİONTHROWN LİNE 553  from agent class ")
             return {}
 
         for item in data.get("actions", []):

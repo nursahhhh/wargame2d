@@ -1,0 +1,38 @@
+{
+  "episode_id": 43,
+  "segment_reflections": [
+    {
+      "segment_id": 0,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "AIRCRAFT",
+        "tactical_error": "Isolated aircraft (ID 2 at [6,10]) moved RIGHT from [5,10] to [6,10] at step 8, closing distance from 4 to 2 with enemy aircraft ID 7 at [9,10]\u2192[8,10], entering high-threat engagement range (dist=2) without nearby allies or effective SAM coverage (SAM at [3,6] dist~6.4 > missile_range 5).",
+        "combat_principle_violated": "Mutual support: isolated units must not advance into enemy radar/missile range without ally overlap.",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "AIRCRAFT: If grouped_with_allies=False and nearest enemy distance <=4 (radar_range) with pressure HIGH, prohibit MOVE directions that reduce distance to that enemy; prioritize directional MOVE away or WAIT for support convergence.",
+        "confidence": 0.92
+      }
+    },
+    {
+      "segment_id": 0,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "AIRCRAFT",
+        "tactical_error": "ID 2 at [6,10] repeatedly executed MOVE actions (LEFT/RIGHT zigzagging) despite enemy ID 7 at [8,10] distance 2.0 (within missile_max_range 4, our_hit_prob 0.45), without nearby allies or SAM coverage (SAM at [3,6] distance ~5.0), allowing enemy closure and destruction.",
+        "combat_principle_violated": "Engage imminent close-range threats before evasive maneuvers when mutual support is absent.",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "For AIRCRAFT: If enemy AIRCRAFT within missile_max_range (4) and distance <=3.0 with threat_score=1.0 and no nearby_allies distance<=3.0 or SAM our_hit_prob>=0.2, prioritize SHOOT over MOVE.",
+        "confidence": 0.92
+      }
+    }
+  ],
+  "episode_analysis": null
+}

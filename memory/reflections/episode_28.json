@@ -1,0 +1,70 @@
+{
+  "episode_id": 28,
+  "segment_reflections": [
+    {
+      "segment_id": 0,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "FIGHTER",
+        "tactical_error": "Entity ID 2 (Aircraft) executed SHOOT on target 9 at step 7 from position [9,9], exposing itself to counter-detection and destruction without proximate friendly overwatch.",
+        "combat_principle_violated": "Mutual Support",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": true
+        },
+        "avoid_rule": "FIGHTER: Prohibit SHOOT if no friendly entities within 3 grid units AND position x>=8 or y>=8 without confirmed support convergence.",
+        "confidence": 0.65
+      }
+    },
+    {
+      "segment_id": 1,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "Decoy",
+        "tactical_error": "Decoy 5 moved RIGHT to [10,6], entering an exposed position leading to immediate destruction without visible enemy detection or support screening.",
+        "combat_principle_violated": "Mutual support: isolated maneuver without friendly cover or proximity.",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": true
+        },
+        "avoid_rule": "DECOY: abort MOVE RIGHT if projected position x>=10 lacks friendly FIGHTER/AWACS overlap within 4-grid radius.",
+        "confidence": 0.4
+      }
+    },
+    {
+      "segment_id": 0,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "Aircraft",
+        "tactical_error": "Entity 2 advanced repeatedly RIGHT to exposed grid edge [9,9], then SHOOT enemy 9 at step 7 without synchronized support from trailing allies 3/5, enabling enemy counter-detection and engagement.",
+        "combat_principle_violated": "Mutual Support",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": true
+        },
+        "avoid_rule": "Aircraft at x>=9 or y>=9 must WAIT or vector LEFT/UP for friendly Aircraft adjacency (<=1 tile) before SHOOT.",
+        "confidence": 0.6
+      }
+    },
+    {
+      "segment_id": 1,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "DECOY",
+        "tactical_error": "Decoy entity ID 5 moved RIGHT to position [10,6] without visible enemy confirmation, entering enemy detection envelope.",
+        "combat_principle_violated": "Maneuver without observation (no prior threat scan).",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "DECOY at x>=10: prohibit RIGHT moves unless visible_enemies confirmed or threat_level low.",
+        "confidence": 0.4
+      }
+    }
+  ],
+  "episode_analysis": null
+}

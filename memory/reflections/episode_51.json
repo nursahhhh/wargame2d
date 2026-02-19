@@ -1,0 +1,22 @@
+{
+  "episode_id": 51,
+  "segment_reflections": [
+    {
+      "segment_id": 0,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "DECOY",
+        "tactical_error": "Decoy (ID 5) advanced via repeated RIGHT moves from [12,6] to [13,6], entering <3-unit range of grouped enemy aircraft (IDs 7,9 at [14,9],[15,7]) without escort suppression fire after initial shot missed.",
+        "combat_principle_violated": "Exposed decoy without sustained fighter fire superiority",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": true,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "DECOY: Refrain from MOVE toward enemies if distance <4 to any RED AIRCRAFT unless >=2 friendly AIRCRAFT within 3 units have executed SHOOT in prior step.",
+        "confidence": 0.9
+      }
+    }
+  ],
+  "episode_analysis": null
+}

@@ -38,7 +38,8 @@ htmlcov/
 .env.*
 storage/
 
-llm_runs / 
+llm_runs/
+ 
 
 # OS-specific junk
 .DS_Store

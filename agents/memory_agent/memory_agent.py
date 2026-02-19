@@ -27,14 +27,16 @@ class MemoryAgent:
         for episode_dir in self.episodes_dir.iterdir():
             if episode_dir.is_dir():
                 self._process_episode(episode_dir)
+                print("Reflection extracted from :",episode_dir)
 
         logging.info("Reflection extraction completed.")
 
 
     def _process_segment(self, segment_path: Path):
         segment = json.loads(segment_path.read_text(encoding="utf-8"))
+
         prompt = self.build_segment_reflection_prompt(segment)
-        response = self.llm(prompt)  # call sync-safe LLMClient
+        response = self.llm(prompt)
         reflection = self._safe_parse(response)
         self._write_reflection(segment, reflection)
 
@@ -51,14 +53,14 @@ class MemoryAgent:
             # Segment-level reflection
             self._process_segment(segment_file)
 
-            # Check early termination trigger
-            if segment.get("trigger_event") == "EARLY_TERMINATION":
+            if segment.get("trigger_event") in {"STRATEGIC_COLLAPSE", "EARLY_TIE"}:
                 early_termination_detected = True
 
-        # If early termination occurred → global analysis
-        if early_termination_detected:
+        # Global analysis happens here ONLY
+        if early_termination_detected and all_segments:
             episode_id = all_segments[0]["episode_id"]
             self._analyze_episode_globally(episode_id, all_segments)
+
 
     def _analyze_episode_globally(self, episode_id: int, segments: List[Dict[str, Any]]):
 
@@ -200,9 +202,11 @@ class MemoryAgent:
             episode_data = json.loads(episode_path.read_text(encoding="utf-8"))
         else:
             episode_data = {
-                "episode_id": episode_id,
-                "reflections": []
-            }
+                    "episode_id": episode_id,
+                    "segment_reflections": [],
+                    "episode_analysis": None
+                }
+
 
         # --- Build reflection payload ---
         payload = {
@@ -212,7 +216,7 @@ class MemoryAgent:
         }
 
         # --- Append ---
-        episode_data["reflections"].append(payload)
+        episode_data["segment_reflections"].append(payload)
 
         # --- Save back ---
         episode_path.write_text(
@@ -251,6 +255,7 @@ class MemoryAgent:
 
             for item in episode_data.get("segment_reflections", []):
                 segment_reflections.append(item["failure_analysis"])
+
 
             if episode_data.get("episode_analysis"):
                 episode_analyses.append(episode_data["episode_analysis"])
@@ -297,7 +302,6 @@ class MemoryAgent:
                 }}
 
                 Constraints:
-                - Max 5 rules
                 - Confidence in [0.0, 1.0]
                 - Prefer structural principles over local mistakes
                 """

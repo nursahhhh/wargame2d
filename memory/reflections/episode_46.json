@@ -1,0 +1,97 @@
+{
+  "episode_id": 46,
+  "segment_reflections": [
+    {
+      "segment_id": 0,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "FIGHTER",
+        "tactical_error": "The fighter (ID 2) at [3,10] in step 10 detected enemy aircraft (ID 7) at [7,10] (dist=4, equal to radar_range=4 and missile_max_range=4) but chose MOVE RIGHT, closing to dist=2 at step 11 instead of SHOOT, exposing it to close-range counterfire without nearby ally support.",
+        "combat_principle_violated": "Engage at maximum standoff range; prioritize fire over closure when target in weapons envelope.",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "For FIGHTER, if enemy AIRCRAFT within missile_max_range=4 on same row/column (dist <=4) and no nearby_allies (dist <=3), select SHOOT(target_id) over any MOVE towards enemy.",
+        "confidence": 0.95
+      }
+    },
+    {
+      "segment_id": 1,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "AIRCRAFT",
+        "tactical_error": "Isolated aircraft closed distance from 2.0 to 1.0 units with enemy aircraft at [6,2] without nearby allies or SAM coverage, then initiated SHOOT, exposing to probable enemy first-strike at point-blank range.",
+        "combat_principle_violated": "Maintain standoff engagement distance; avoid closing into high-threat close range without support superiority.",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "AIRCRAFT: if no allies within 3.0 units AND enemy aircraft detected within missile_range (4.0) at distance <=2.0, prohibit MOVE towards enemy; require SHOOT at current range or WAIT.",
+        "confidence": 0.9
+      }
+    },
+    {
+      "segment_id": 2,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "DECOY",
+        "tactical_error": "DECOY at [6,7] executed MOVE UP toward enemy AIRCRAFT at [6,9] (distance 2.0), closing to projected distance 1.0 without covering fire from nearby SAM at [3,6] (distance 3.16, missile range coverage).",
+        "combat_principle_violated": "Do not advance into unsuppressed enemy engagement zone without mutual support fire.",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": true,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "DECOY: if AIRCRAFT enemy within radar_range=2.0 and pressure=HIGH and no nearby SAM firing, select MOVE direction maximizing distance to enemy position.",
+        "confidence": 0.95
+      }
+    },
+    {
+      "segment_id": 0,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "FIGHTER",
+        "tactical_error": "At step 10, from [3,10] facing enemy #7 at [7,10] (dist 4, within radar 4 and missile range 4, our_hit_prob ~0.1), chose MOVE RIGHT closing to dist 2 at [4,10], unsupported (no nearby_allies; SAM at [3,6] dist ~5.66 > radar 5 unable to detect/cover).",
+        "combat_principle_violated": "Engage at maximum standoff range",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": false,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "For FIGHTER: if isolated (no nearby_allies) and detects enemy at dist <=4 on same row/column, prioritize SHOOT over MOVE towards enemy.",
+        "confidence": 0.95
+      }
+    },
+    {
+      "segment_id": 1,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "summary": "Failed to analyze segment",
+        "root_cause": "Unknown",
+        "bad_action_pattern": "Unknown",
+        "avoid_rule": "Avoid repeating this behavior in similar situations.",
+        "confidence": 0.1
+      }
+    },
+    {
+      "segment_id": 2,
+      "trigger_event": "ALLY_LOST",
+      "failure_analysis": {
+        "entity_type": "DECOY",
+        "tactical_error": "Moved UP from [6,7] towards enemy aircraft at [6,9], closing distance from 2.0 to 1.0 units under HIGH pressure, without SAM support engagement.",
+        "combat_principle_violated": "Fire and maneuver: maneuver without covering fire.",
+        "engagement_context": {
+          "enemy_radar_overlap": true,
+          "friendly_support_overlap": true,
+          "within_enemy_sam_range": false
+        },
+        "avoid_rule": "DECOY: if pressure HIGH and enemy AIRCRAFT distance <= 3 and collinear north and nearby SAM distance <= 4 with enemy in SAM missile range, then WAIT.",
+        "confidence": 0.9
+      }
+    }
+  ],
+  "episode_analysis": null
+}

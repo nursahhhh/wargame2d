@@ -1,0 +1,422 @@
+{
+  "episode_id": 50,
+  "segment_id": 1,
+  "trigger_event": "ALLY_LOST",
+  "time_range": {
+    "start_step": 8,
+    "end_step": 9
+  },
+  "step_trace": [
+    {
+      "step": 8,
+      "context": {
+        "grid": {
+          "width": 20,
+          "height": 13
+        },
+        "global_state": {
+          "aggression": 0.47
+        },
+        "friendlies": [
+          {
+            "id": 1,
+            "team": "BLUE",
+            "kind": "AWACS",
+            "position": [
+              1,
+              6
+            ],
+            "capabilities": {
+              "mobile": true,
+              "armed": false,
+              "missiles": null,
+              "missile_max_range": null,
+              "base_hit_prob": null,
+              "min_hit_prob": null,
+              "radar_range": 9
+            },
+            "nearby_allies": [
+              {
+                "id": 4,
+                "kind": "SAM",
+                "position": [
+                  3,
+                  6
+                ],
+                "distance": 2.0,
+                "armed": true
+              }
+            ],
+            "nearby_enemies": [],
+            "grouped_with_allies": true,
+            "pressure": {
+              "value": 0.0,
+              "level": "LOW"
+            }
+          },
+          {
+            "id": 4,
+            "team": "BLUE",
+            "kind": "SAM",
+            "position": [
+              3,
+              6
+            ],
+            "capabilities": {
+              "mobile": false,
+              "armed": true,
+              "missiles": 6,
+              "missile_max_range": 5,
+              "base_hit_prob": 0.8,
+              "min_hit_prob": 0.1,
+              "radar_range": 5,
+              "is_radar_active": false,
+              "activation_range": null,
+              "can_shoot_when_active": true
+            },
+            "nearby_allies": [
+              {
+                "id": 1,
+                "kind": "AWACS",
+                "position": [
+                  1,
+                  6
+                ],
+                "distance": 2.0,
+                "armed": false
+              }
+            ],
+            "nearby_enemies": [],
+            "grouped_with_allies": true,
+            "pressure": {
+              "value": 0.0,
+              "level": "LOW"
+            }
+          },
+          {
+            "id": 2,
+            "team": "BLUE",
+            "kind": "AIRCRAFT",
+            "position": [
+              9,
+              9
+            ],
+            "capabilities": {
+              "mobile": true,
+              "armed": true,
+              "missiles": 7,
+              "missile_max_range": 4,
+              "base_hit_prob": 0.8,
+              "min_hit_prob": 0.1,
+              "radar_range": 4
+            },
+            "nearby_allies": [],
+            "nearby_enemies": [
+              {
+                "id": 7,
+                "team": "RED",
+                "kind": "AIRCRAFT",
+                "position": [
+                  12,
+                  9
+                ],
+                "distance": 3.0,
+                "threat_score": 1.0,
+                "fire_behavior": {
+                  "total_shots": null,
+                  "recent_shots": null,
+                  "last_fired_steps_ago": null
+                },
+                "armed": null,
+                "grouped": false,
+                "our_hit_prob": 0.275,
+                "their_hit_prob": null
+              }
+            ],
+            "grouped_with_allies": false,
+            "pressure": {
+              "value": 1.0,
+              "level": "HIGH"
+            }
+          },
+          {
+            "id": 3,
+            "team": "BLUE",
+            "kind": "AIRCRAFT",
+            "position": [
+              9,
+              3
+            ],
+            "capabilities": {
+              "mobile": true,
+              "armed": true,
+              "missiles": 7,
+              "missile_max_range": 4,
+              "base_hit_prob": 0.8,
+              "min_hit_prob": 0.1,
+              "radar_range": 4
+            },
+            "nearby_allies": [],
+            "nearby_enemies": [
+              {
+                "id": 8,
+                "team": "RED",
+                "kind": "AIRCRAFT",
+                "position": [
+                  12,
+                  3
+                ],
+                "distance": 3.0,
+                "threat_score": 1.0,
+                "fire_behavior": {
+                  "total_shots": null,
+                  "recent_shots": null,
+                  "last_fired_steps_ago": null
+                },
+                "armed": null,
+                "grouped": false,
+                "our_hit_prob": 0.275,
+                "their_hit_prob": null
+              }
+            ],
+            "grouped_with_allies": false,
+            "pressure": {
+              "value": 1.0,
+              "level": "HIGH"
+            }
+          }
+        ]
+      },
+      "decision": {
+        "actor": "blue",
+        "source": "llm",
+        "actions": {
+          "2": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          },
+          "3": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          }
+        }
+      }
+    },
+    {
+      "step": 9,
+      "context": {
+        "grid": {
+          "width": 20,
+          "height": 13
+        },
+        "global_state": {
+          "aggression": 0.48
+        },
+        "friendlies": [
+          {
+            "id": 1,
+            "team": "BLUE",
+            "kind": "AWACS",
+            "position": [
+              1,
+              6
+            ],
+            "capabilities": {
+              "mobile": true,
+              "armed": false,
+              "missiles": null,
+              "missile_max_range": null,
+              "base_hit_prob": null,
+              "min_hit_prob": null,
+              "radar_range": 9
+            },
+            "nearby_allies": [
+              {
+                "id": 4,
+                "kind": "SAM",
+                "position": [
+                  3,
+                  6
+                ],
+                "distance": 2.0,
+                "armed": true
+              }
+            ],
+            "nearby_enemies": [],
+            "grouped_with_allies": true,
+            "pressure": {
+              "value": 0.0,
+              "level": "LOW"
+            }
+          },
+          {
+            "id": 4,
+            "team": "BLUE",
+            "kind": "SAM",
+            "position": [
+              3,
+              6
+            ],
+            "capabilities": {
+              "mobile": false,
+              "armed": true,
+              "missiles": 6,
+              "missile_max_range": 5,
+              "base_hit_prob": 0.8,
+              "min_hit_prob": 0.1,
+              "radar_range": 5,
+              "is_radar_active": false,
+              "activation_range": null,
+              "can_shoot_when_active": true
+            },
+            "nearby_allies": [
+              {
+                "id": 1,
+                "kind": "AWACS",
+                "position": [
+                  1,
+                  6
+                ],
+                "distance": 2.0,
+                "armed": false
+              }
+            ],
+            "nearby_enemies": [],
+            "grouped_with_allies": true,
+            "pressure": {
+              "value": 0.0,
+              "level": "LOW"
+            }
+          },
+          {
+            "id": 2,
+            "team": "BLUE",
+            "kind": "AIRCRAFT",
+            "position": [
+              10,
+              9
+            ],
+            "capabilities": {
+              "mobile": true,
+              "armed": true,
+              "missiles": 7,
+              "missile_max_range": 4,
+              "base_hit_prob": 0.8,
+              "min_hit_prob": 0.1,
+              "radar_range": 4
+            },
+            "nearby_allies": [],
+            "nearby_enemies": [
+              {
+                "id": 7,
+                "team": "RED",
+                "kind": "AIRCRAFT",
+                "position": [
+                  12,
+                  9
+                ],
+                "distance": 2.0,
+                "threat_score": 1.0,
+                "fire_behavior": {
+                  "total_shots": null,
+                  "recent_shots": null,
+                  "last_fired_steps_ago": null
+                },
+                "armed": null,
+                "grouped": false,
+                "our_hit_prob": 0.45,
+                "their_hit_prob": null
+              }
+            ],
+            "grouped_with_allies": false,
+            "pressure": {
+              "value": 1.0,
+              "level": "HIGH"
+            }
+          },
+          {
+            "id": 3,
+            "team": "BLUE",
+            "kind": "AIRCRAFT",
+            "position": [
+              10,
+              3
+            ],
+            "capabilities": {
+              "mobile": true,
+              "armed": true,
+              "missiles": 7,
+              "missile_max_range": 4,
+              "base_hit_prob": 0.8,
+              "min_hit_prob": 0.1,
+              "radar_range": 4
+            },
+            "nearby_allies": [],
+            "nearby_enemies": [
+              {
+                "id": 8,
+                "team": "RED",
+                "kind": "AIRCRAFT",
+                "position": [
+                  12,
+                  3
+                ],
+                "distance": 2.0,
+                "threat_score": 1.0,
+                "fire_behavior": {
+                  "total_shots": null,
+                  "recent_shots": null,
+                  "last_fired_steps_ago": null
+                },
+                "armed": null,
+                "grouped": false,
+                "our_hit_prob": 0.45,
+                "their_hit_prob": null
+              }
+            ],
+            "grouped_with_allies": false,
+            "pressure": {
+              "value": 1.0,
+              "level": "HIGH"
+            }
+          }
+        ]
+      },
+      "decision": {
+        "actor": "blue",
+        "source": "llm",
+        "actions": {
+          "2": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          },
+          "3": {
+            "type": "MOVE",
+            "params": {
+              "dir": "RIGHT"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outcome": {
+    "type": "ALLY_LOST",
+    "turn": 9,
+    "entity_id": 2,
+    "entity_type": "Aircraft",
+    "last_position": [
+      10,
+      9
+    ],
+    "irreversible": true,
+    "severity": "HIGH"
+  },
+  "created_at": "2026-02-19T10:29:41.651522"
+}

@@ -78,7 +78,7 @@ class GameRunner:
         self._final_world: WorldState | None = None
 
         # 🧠 Memory components
-        self.recorder = EpisodeRecorder(max_window=12)
+        self.recorder = EpisodeRecorder(max_window=20)
         self.memory_store = MemoryStore(episode_id=episode_id)
 
         log.info("GameRunner initialized for scenario seed=%s", self.scenario.seed)
@@ -166,21 +166,18 @@ class GameRunner:
             team=Team.BLUE,
         )
 
+        blue_payload = blue_meta.get("prompt_payload", {})
+
         self.memory_store.record_step({
-                    "step": self.turn,
+            "step": self.turn,
+            "context": blue_payload,   # full snapshot
+            "decision": {
+                "actor": "blue",
+                "source": "llm",
+                "actions": blue_actions,
+            }
+        })
 
-                    "context": {
-                        "threat_level": blue_meta.get("threat_level"),
-                        "visible_enemies": red_meta.get("visible_enemies"),
-                        "distance_to_objective": blue_meta.get("distance_to_objective"),
-                    },
-
-                    "decision": {
-                        "actor": "blue",
-                        "source": "llm",
-                        "actions": blue_actions,
-                    }
-                })
 
         for event in events:
             log.warning("Negative event detected: %s", event)
@@ -278,12 +275,10 @@ class GameRunner:
 
         blue_units = [u for u in world._entities if u.team == Team.BLUE and u.alive]
         red_units = [u for u in world._entities if u.team == Team.RED and u.alive]
-
-        # You may need to adjust this depending on your unit model
-        blue_armed = [u for u in blue_units if getattr(u, "can_attack", False)]
-        red_armed = [u for u in red_units if getattr(u, "can_attack", False)]
-
-        # Case 1: both exhausted
+        
+        blue_armed = [u for u in blue_units if getattr(u, "can_shoot", False)]
+        red_armed = [u for u in red_units if getattr(u, "can_shoot", False)]
+            # Case 1: both exhausted
         if not blue_armed and not red_armed:
             return {
                 "type": "EARLY_TIE",

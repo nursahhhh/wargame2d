@@ -1,0 +1,176 @@
+{
+  "episode_id": 46,
+  "segment_id": 2,
+  "trigger_event": "ALLY_LOST",
+  "time_range": {
+    "start_step": 14,
+    "end_step": 14
+  },
+  "step_trace": [
+    {
+      "step": 14,
+      "context": {
+        "grid": {
+          "width": 20,
+          "height": 13
+        },
+        "global_state": {
+          "aggression": 0.53
+        },
+        "friendlies": [
+          {
+            "id": 1,
+            "team": "BLUE",
+            "kind": "AWACS",
+            "position": [
+              0,
+              5
+            ],
+            "capabilities": {
+              "mobile": true,
+              "armed": false,
+              "missiles": null,
+              "missile_max_range": null,
+              "base_hit_prob": null,
+              "min_hit_prob": null,
+              "radar_range": 9
+            },
+            "nearby_allies": [],
+            "nearby_enemies": [],
+            "grouped_with_allies": false,
+            "pressure": {
+              "value": 0.0,
+              "level": "LOW"
+            }
+          },
+          {
+            "id": 4,
+            "team": "BLUE",
+            "kind": "SAM",
+            "position": [
+              3,
+              6
+            ],
+            "capabilities": {
+              "mobile": false,
+              "armed": true,
+              "missiles": 4,
+              "missile_max_range": 5,
+              "base_hit_prob": 0.8,
+              "min_hit_prob": 0.1,
+              "radar_range": 5,
+              "is_radar_active": false,
+              "activation_range": null,
+              "can_shoot_when_active": true
+            },
+            "nearby_allies": [],
+            "nearby_enemies": [
+              {
+                "id": 7,
+                "team": "RED",
+                "kind": "AIRCRAFT",
+                "position": [
+                  6,
+                  9
+                ],
+                "distance": 4.242640687119285,
+                "threat_score": 1.0,
+                "fire_behavior": {
+                  "total_shots": null,
+                  "recent_shots": null,
+                  "last_fired_steps_ago": null
+                },
+                "armed": null,
+                "our_hit_prob": 0.20603030380330012,
+                "their_hit_prob": null
+              }
+            ],
+            "grouped_with_allies": false,
+            "pressure": {
+              "value": 1.0,
+              "level": "HIGH"
+            }
+          },
+          {
+            "id": 5,
+            "team": "BLUE",
+            "kind": "DECOY",
+            "position": [
+              6,
+              7
+            ],
+            "capabilities": {
+              "mobile": true,
+              "armed": false,
+              "missiles": null,
+              "missile_max_range": null,
+              "base_hit_prob": null,
+              "min_hit_prob": null,
+              "radar_range": 2.0
+            },
+            "nearby_allies": [],
+            "nearby_enemies": [
+              {
+                "id": 7,
+                "team": "RED",
+                "kind": "AIRCRAFT",
+                "position": [
+                  6,
+                  9
+                ],
+                "distance": 2.0,
+                "threat_score": 1.0,
+                "fire_behavior": {
+                  "total_shots": null,
+                  "recent_shots": null,
+                  "last_fired_steps_ago": null
+                },
+                "armed": null,
+                "our_hit_prob": null,
+                "their_hit_prob": null
+              }
+            ],
+            "grouped_with_allies": false,
+            "pressure": {
+              "value": 1.0,
+              "level": "HIGH"
+            }
+          }
+        ]
+      },
+      "decision": {
+        "actor": "blue",
+        "source": "llm",
+        "actions": {
+          "1": {
+            "type": "WAIT",
+            "params": {}
+          },
+          "4": {
+            "type": "WAIT",
+            "params": {}
+          },
+          "5": {
+            "type": "MOVE",
+            "params": {
+              "dir": "UP"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outcome": {
+    "type": "ALLY_LOST",
+    "turn": 14,
+    "entity_id": 5,
+    "entity_type": "Decoy",
+    "last_position": [
+      6,
+      7
+    ],
+    "irreversible": true,
+    "severity": "HIGH"
+  },
+  "created_at": "2026-02-19T09:24:18.796619"
+}

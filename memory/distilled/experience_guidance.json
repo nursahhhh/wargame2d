@@ -1,24 +1,24 @@
 {
   "experience_guidance": [
     {
-      "rule": "Avoid MOVE RIGHT/UP or forward advances for FIGHTER, Aircraft, Decoy if friendly_support_overlap=False, especially at x>=10.",
-      "rationale": "Isolated advances expose units to enemy engagement without protection; seen in 70% of reflections.",
-      "confidence": 0.9
+      "rule": "Prohibit isolated advances by offensive assets (AIRCRAFT/FIGHTER/DECOY) into enemy radar/missile range without nearby allies (<=3 units) or SAM coverage overlap.",
+      "rationale": "Systemic offensive collapse from dispersed, unsupported engagements allowing piecemeal destruction; segments repeatedly show mutual support violations leading to isolated losses.",
+      "confidence": 0.95
     },
     {
-      "rule": "Avoid SHOOT for FIGHTER/Aircraft if friendly_support_overlap=False and enemy_radar_overlap=True.",
-      "rationale": "Solo shooting draws counterfire without suppression; recurrent in exposed positions.",
-      "confidence": 0.85
+      "rule": "Prohibit deploying DECOY ahead of armed escorts without sustained overwatch fire from >=1 FIGHTER/AIRCRAFT within 4 units.",
+      "rationale": "Decoys sacrificed without backup, exacerbating coordination breakdowns and asset misallocation; episode highlights never deploying scouts unsupported.",
+      "confidence": 0.92
     },
     {
-      "rule": "Avoid formation divergence (orthogonal MOVE directions from allies) without shared target or support.",
-      "rationale": "Breaks mutual support, leading to isolated overextension; multiple fighter/decoy cases.",
-      "confidence": 0.8
+      "rule": "Prohibit static positioning of AWACS/SAM without proactive radar layering and forward repositioning to maintain information dominance.",
+      "rationale": "Persistent inactivity and lack of overlap lost vision to enemy central grouping; core to episode-level structural failure in radar chaining.",
+      "confidence": 0.95
     },
     {
-      "rule": "Avoid SHOOT for SAM unless visible_enemies confirmed and friendly_support_overlap=True.",
-      "rationale": "Premature firing reveals fixed position without cover; firing discipline violation.",
-      "confidence": 0.7
+      "rule": "Prohibit diverging formations or north-south splits among offensive assets without designated rally points for convergence prior to engagement.",
+      "rationale": "No formation flying led to fragmented vision and isolated 1v1 losses; episode identifies asset dispersion as primary coordination breakdown.",
+      "confidence": 0.93
     }
   ]
 }
