@@ -1,24 +1,24 @@
 {
   "experience_guidance": [
     {
-      "rule": "Prohibit isolated advances by offensive assets (AIRCRAFT/FIGHTER/DECOY) into enemy radar/missile range without nearby allies (<=3 units) or SAM coverage overlap.",
-      "rationale": "Systemic offensive collapse from dispersed, unsupported engagements allowing piecemeal destruction; segments repeatedly show mutual support violations leading to isolated losses.",
+      "rule": "Prohibit isolated advances or maneuvers by offensive assets (FIGHTER, AIRCRAFT, DECOY) into enemy radar/missile range without nearby allies (<=3 units) providing mutual support overlap.",
+      "rationale": "Systemic loss of assets due to fragmented positioning and lack of convergence, enabling enemy to engage units piecemeal without overlapping fires or evasion aid.",
       "confidence": 0.95
     },
     {
-      "rule": "Prohibit deploying DECOY ahead of armed escorts without sustained overwatch fire from >=1 FIGHTER/AIRCRAFT within 4 units.",
-      "rationale": "Decoys sacrificed without backup, exacerbating coordination breakdowns and asset misallocation; episode highlights never deploying scouts unsupported.",
+      "rule": "Never deploy DECOY units without paired armed overwatch (FIGHTER/AIRCRAFT within 4 units actively SHOOTing or SAM radar coverage).",
+      "rationale": "Decoys sacrificed unsupported, leading to offensive collapse as they advanced solo into high-threat zones without suppressive fire.",
+      "confidence": 0.95
+    },
+    {
+      "rule": "Prohibit static positioning of information assets (AWACS, SAM); require dynamic forward repositioning for radar layering and cueing before any offensive push.",
+      "rationale": "Inactive SAM radars and static AWACS caused loss of information dominance and fragmented Blue vision against centralized Red forces.",
+      "confidence": 0.95
+    },
+    {
+      "rule": "Avoid divergence of mobile assets across axes without rally points or tight clusters ensuring formation flying and synchronized engagements.",
+      "rationale": "No mutual support or concentrated volleys due to north-south splits and lack of integration between offensive/defensive elements.",
       "confidence": 0.92
-    },
-    {
-      "rule": "Prohibit static positioning of AWACS/SAM without proactive radar layering and forward repositioning to maintain information dominance.",
-      "rationale": "Persistent inactivity and lack of overlap lost vision to enemy central grouping; core to episode-level structural failure in radar chaining.",
-      "confidence": 0.95
-    },
-    {
-      "rule": "Prohibit diverging formations or north-south splits among offensive assets without designated rally points for convergence prior to engagement.",
-      "rationale": "No formation flying led to fragmented vision and isolated 1v1 losses; episode identifies asset dispersion as primary coordination breakdown.",
-      "confidence": 0.93
     }
   ]
 }

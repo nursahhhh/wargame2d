@@ -318,7 +318,7 @@ class LLMHybridAgent(BaseAgent):
 
     def _build_context_prompt(self, current_prompt: str) -> str:
         history_text = "\n\n".join(self.recent_history[-self.memory_window:])
-        experience_avoidance = self.build_experience_advisory_section("wargame2d/llm_runs/memory/distilled/experience_guidance.json")
+        experience_avoidance = self.build_experience_advisory_section("wargame2d/memory/distilled/experience_guidance.json")
         combined = f"""
 
         You are a tactical AI commander controlling friendly units in a 2D combat grid:
@@ -376,6 +376,9 @@ class LLMHybridAgent(BaseAgent):
         [S2] Prefer lateral/backward AWACS movement over forward
         [S3] Prefer SAM ON for area denial
         [S4] Avoid boundary-hugging paths for AWACS
+        Isolation from friendly support is NOT considered high exposure
+        if no enemy combat aircraft are present.
+
 
         ============================================================
         ADVANTAGE DEVELOPMENT RULE
@@ -466,8 +469,13 @@ class LLMHybridAgent(BaseAgent):
         ============================================================
         - Exploration claimed inside friendly radar = INVALID (H4)
         - DEFEND_AWACS near AWACS when effect is exploration = INVALID (H5)
-        - Adversarial safety check: If move is safe now but unsafe after
-        obvious enemy response, treat it as UNSAFE
+        - Adversarial safety check: If enemy combat aircraft are detected,
+        and move is safe now but unsafe after obvious enemy response,
+        treat it as UNSAFE.
+
+        If no enemy combat aircraft are detected,
+        assume LOW probability of immediate interception from unseen space.
+
         - Edge-hugging or corner moves for AWACS are high-risk
         - No laundering invalid actions through alternate reason_tags
 
@@ -502,6 +510,12 @@ class LLMHybridAgent(BaseAgent):
 
         Actions that increase exposure_risk above 6 without
         advantage_gain above 6 are invalid.
+
+        Exception:
+        If no enemy combat aircraft are currently detected,
+        exploration-related moves (EXPLORE_UNSEEN or REPOSITION_FOR_EXPLORATION)
+        may allow exposure_risk up to 8.
+
 
         Allowed reason_tags:
         - PROTECT_AWACS         (escorting, screening, retreating AWACS)
