@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, TYPE_CHECKING
 from dotenv import load_dotenv
-
+from commander_agent import CommanderAgent
 from env.core.actions import Action
 from env.core.types import Team, ActionType
 from env.world import WorldState
@@ -174,6 +174,7 @@ class LLMHybridAgent(BaseAgent):
 
     # --------------------------------------------------------
 
+
     def get_actions(
         self,
         state: Dict[str, Any],
@@ -187,6 +188,9 @@ class LLMHybridAgent(BaseAgent):
         allowed_actions: Dict[int, list[Action]] = {}
         final_actions: Dict[int, Action] = {}
 
+        # -----------------------------
+        # Build allowed actions
+        # -----------------------------
         for entity in intel.friendlies:
             if not entity.alive:
                 continue
@@ -195,37 +199,102 @@ class LLMHybridAgent(BaseAgent):
             if acts:
                 allowed_actions[entity.id] = acts
 
-        # -------- PROMPT --------
+        # -----------------------------
+        # Initialize Commander
+        # -----------------------------
+        commander = CommanderAgent(
+            model=self.model,
+            api_key=self.api_key,
+            run_log_dir=self.run_log_dir
+        )
 
+        # -----------------------------
+        # Build simplified commander state
+        # -----------------------------
+        commander_state = {
+            "turn": self.step_counter,
+            "friendlies": [
+                {
+                    "id": f.id,
+                    "kind": f.kind.name,
+                    "position": f.pos,
+                    "armed": bool(getattr(f, "missiles", 0)) or f.can_shoot,
+                    "radar": f.get_active_radar_range(),
+                } for f in intel.friendlies if f.alive
+            ],
+            "enemy_known": [
+                {
+                    "id": e.id,
+                    "kind": e.kind.name,
+                    "position": e.position,
+                    "threat_score": round(
+                        max(intel.enemy_threat_score(e, f.pos) for f in intel.friendlies if f.alive),
+                        2
+                    )
+                } for e in intel.visible_enemies
+            ],
+            "team_unseen": list(intel.team_unseen)
+        }
+
+        # -----------------------------
+        # Commander decides high-level intent
+        # -----------------------------
+        try:
+            commander_intent = commander.decide_intent(commander_state, self.step_counter)
+        except Exception as e:
+            print(f"[Commander ERROR] {e}")
+            commander_intent = {}
+
+        # -----------------------------
+        # Build Captain prompt
+        # -----------------------------
         prompt_text, prompt_payload = self.prompt_formatter.build_prompt(
             intel=intel,
             allowed_actions=allowed_actions,
             config=self.prompt_config,
-            step = self.step_counter
+            step=self.step_counter
         )
-        full_prompt = self._build_context_prompt(prompt_text)
 
+        # Include commander intent in prompt and payload
+        full_prompt = self._build_context_prompt(prompt_text)
+        full_prompt += f"\n\n=== COMMANDER INTENT ===\n{json.dumps(commander_intent, indent=2)}\n"
+        prompt_payload["commander_intent"] = commander_intent
+
+        # -----------------------------
+        # Increment step counter
+        # -----------------------------
         self.step_counter += 1
 
-        llm_args = call_openrouter(
-            prompt=full_prompt,
-            model=self.model,
-            api_key=self.api_key,
-            step=self.step_counter,
-            run_log_dir=self.run_log_dir,
+        # -----------------------------
+        # Call Captain LLM
+        # -----------------------------
+        try:
+            llm_args = call_openrouter(
+                prompt=full_prompt,
+                model=self.model,
+                api_key=self.api_key,
+                step=self.step_counter,
+                run_log_dir=self.run_log_dir,
+            )
+        except Exception as e:
+            print(f"[LLM ERROR] {e}")
+            llm_args = None
 
-        )
-
+        # -----------------------------
+        # Parse LLM actions
+        # -----------------------------
         parsed_actions = {}
         if llm_args:
             parsed_actions = self._parse_llm_output(llm_args, allowed_actions)
 
-        # -------- FALLBACK --------
-        if not parsed_actions:
-            print("LLM FAILED → no actions selected")
-        else:
+        if parsed_actions:
             final_actions.update(parsed_actions)
+        else:
+            print("LLM FAILED → no actions selected")
 
+        # -----------------------------
+        # Build metadata
+        # -----------------------------
         metadata = {
             "llm_raw_output": llm_args,
             "parsed_actions": parsed_actions,
@@ -233,13 +302,8 @@ class LLMHybridAgent(BaseAgent):
             "prompt_payload": prompt_payload,
         }
 
-        print("Parsed acrions are : ",parsed_actions)
-
+        print("Parsed actions:", parsed_actions)
         return final_actions, metadata
-
-
-
-
     def build_experience_advisory_section(
         self,           
         path: str,
@@ -316,9 +380,16 @@ class LLMHybridAgent(BaseAgent):
     # PROMPT CONTEXT
     # --------------------------------------------------------
 
-    def _build_context_prompt(self, current_prompt: str) -> str:
+    def _build_context_prompt(self, current_prompt: str, commander_intent: Optional[Dict[str, Any]] = None) -> str:
         history_text = "\n\n".join(self.recent_history[-self.memory_window:])
-        experience_avoidance = self.build_experience_advisory_section("wargame2d/memory/distilled/experience_guidance.json")
+        experience_avoidance = self.build_experience_advisory_section(
+            "wargame2d/memory/distilled/experience_guidance.json"
+        )
+
+        commander_intent_text = ""
+        if commander_intent:
+            commander_intent_text = f"\n=== COMMANDER INTENT ===\n{json.dumps(commander_intent, indent=2)}\n"
+
         combined = f"""
 
         You are a tactical AI commander controlling friendly units in a 2D combat grid:
@@ -326,6 +397,7 @@ class LLMHybridAgent(BaseAgent):
 
         All cells within range of: Friendly AWACS radar OR active SAM radar
         - This coverage is SHARED among all friendly units instantly
+
         ============================================================
         MISSION OBJECTIVES (Ordered by Priority)
         ============================================================
@@ -341,6 +413,8 @@ class LLMHybridAgent(BaseAgent):
         - AND TEAM-UNSEEN cells exist outside friendly sensor coverage
 
         Lower priorities MUST NOT override higher priorities.
+
+        {commander_intent_text}  # <-- Commander Intent inserted here
 
         ============================================================
         GAME STATE (Provided Each Turn)
@@ -364,21 +438,6 @@ class LLMHybridAgent(BaseAgent):
         [H3] Actions that guarantee AWACS destruction next turn are FORBIDDEN
         [H4] Exploration inside friendly radar coverage is INVALID
         [H5] Re-labeling invalid exploration as DEFEND/SUPPORT is FORBIDDEN
-
-        FIRM constraints — Violate only to satisfy HARD constraints:
-        [F1] AWACS should maintain 2+ cell buffer from enemy radar edge
-        [F2] AWACS should stay behind combat units (layered protection)
-        [F3] Aircraft should not WAIT when enemy AWACS is detected
-        [F4] At least one unit should advance exploration each turn (when P4 active)
-
-        SOFT constraints — Preferences, not requirements:
-        [S1] Prefer 2v1+ engagements over fair fights
-        [S2] Prefer lateral/backward AWACS movement over forward
-        [S3] Prefer SAM ON for area denial
-        [S4] Avoid boundary-hugging paths for AWACS
-        Isolation from friendly support is NOT considered high exposure
-        if no enemy combat aircraft are present.
-
 
         ============================================================
         ADVANTAGE DEVELOPMENT RULE
