@@ -1,0 +1,40 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 29
+================================================================================
+
+{
+  "turn": 29,
+  "situation_analysis": "All visible enemy units have been eliminated, establishing air superiority. Remaining enemy units are undetected, requiring reconnaissance to locate.",
+  "enemy_formation": "NO_CONTACT",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Locate remaining enemy units",
+    "Maintain air superiority and protect AWACS"
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "RECON",
+      "priority": "HIGH"
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "RECON",
+      "priority": "HIGH"
+    },
+    {
+      "role": "SAM",
+      "mode": "DEFENSIVE",
+      "priority": "MEDIUM"
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 684
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

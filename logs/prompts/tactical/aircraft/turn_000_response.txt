@@ -1,0 +1,23 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 0
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "RECON mode, no enemies detected, moving UP to search as per PATROL_EDGES bias."
+    },
+    {
+      "id": 3,
+      "idx": 2,
+      "action_type": "MOVE",
+      "why": "RECON mode, no enemies detected, moving DOWN to search as per PATROL_EDGES bias."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

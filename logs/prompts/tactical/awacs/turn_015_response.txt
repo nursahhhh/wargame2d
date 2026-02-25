@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 15
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 0,
+      "action_type": "WAIT",
+      "why": "AWACS is unarmed and has missiles=0. The enemy is at a medium threat distance (13) and can hit the AWACS (hit_prob_from_enemy: 0.13). However, there are no retreat options available, and moving closer would be detrimental. Waiting is the safest option to maintain distance and avoid further risk, as the current threat is not critical."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 7
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 3,
+      "action_type": "MOVE",
+      "why": "AWACS is unarmed and has a medium threat. Retreating to increase distance from the enemy."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

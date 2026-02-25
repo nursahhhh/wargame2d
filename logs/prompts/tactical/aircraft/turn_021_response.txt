@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 21
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "Aircraft has no missiles and is in RECON mode. The enemy is at HIGH threat (dist 4) and can hit me. Retreating to avoid engagement while out of missiles."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

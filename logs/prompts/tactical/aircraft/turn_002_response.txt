@@ -1,0 +1,23 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 2
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "No shoot options, moving DOWN to APPROACH the enemy as per AGGRESSIVE mode."
+    },
+    {
+      "id": 3,
+      "idx": 2,
+      "action_type": "MOVE",
+      "why": "No shoot options, moving DOWN to APPROACH the enemy as per AGGRESSIVE mode."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

@@ -1,0 +1,23 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 6
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 2,
+      "action_type": "MOVE",
+      "why": "No enemies detected, moving DOWN to search and patrol edges as per RECON mode bias."
+    },
+    {
+      "id": 3,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "No enemies detected, moving UP to search and patrol edges as per RECON mode bias."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

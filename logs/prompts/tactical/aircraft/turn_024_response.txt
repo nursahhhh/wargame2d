@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 24
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 4,
+      "action_type": "MOVE",
+      "why": "No threats detected, moving RIGHT to search for enemy SAMs and AWACS as part of RECON objective."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

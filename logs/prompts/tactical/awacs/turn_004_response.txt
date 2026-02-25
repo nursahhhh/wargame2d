@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 4
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 0,
+      "action_type": "WAIT",
+      "why": "AWACS is in MEDIUM threat range and can be hit. However, the hit probability is low, and the unit has no missiles to shoot. The best option is to WAIT and maintain current position, as moving closer would increase risk, and moving further is not an option."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - SAM - TURN 21
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 4,
+      "idx": 1,
+      "action_type": "TOGGLE",
+      "why": "The SAM is in AGGRESSIVE mode and the enemy aircraft has a hit probability of 0.22, which is below the 0.25 threshold for shooting in AGGRESSIVE mode. Toggling radar ON might improve the hit probability next turn, or at least provide more information."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

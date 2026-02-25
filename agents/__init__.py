@@ -14,6 +14,7 @@ from .spec import AgentSpec
 from .random_agent import RandomAgent
 from .greedy_agent import GreedyAgent
 from .llm_agent import LLMAgent
+from .agentic_agent.llm_agent_v2 import LLMAgentV2
 from .llm_agent.llm_hybrid_agent import LLMHybridAgent
 from .team_intel import TeamIntel, VisibleEnemy
 
@@ -26,6 +27,7 @@ __all__ = [
     "RandomAgent",
     "GreedyAgent",
     "LLMAgent",
+    "LLMAgentV2",
     "LLMHybridAgent",
     "TeamIntel",
     "VisibleEnemy",

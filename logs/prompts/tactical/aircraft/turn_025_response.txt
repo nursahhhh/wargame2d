@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 25
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 4,
+      "action_type": "MOVE",
+      "why": "Recon mode, no enemies detected. Moving RIGHT to search for hidden units, following MOVE_TO_EDGES bias."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

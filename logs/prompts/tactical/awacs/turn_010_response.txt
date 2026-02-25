@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 10
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "AWACS is unarmed and has enemies with can_they_hit_me set to true. It must retreat to survive. Moving UP retreats from the nearest enemy to the East."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

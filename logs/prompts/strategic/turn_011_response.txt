@@ -1,0 +1,40 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 11
+================================================================================
+
+{
+  "turn": 11,
+  "situation_analysis": "We maintain air superiority with two enemy aircraft remaining, both currently in the center sector. Our AWACS has low missile coverage, but we have sufficient missiles on our aircraft and SAM.",
+  "enemy_formation": "SCATTERED",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Eliminate remaining enemy aircraft",
+    "Protect AWACS from potential threats"
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "DEFENSIVE",
+      "priority": "Maintain safe distance from threats while providing radar coverage."
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "AGGRESSIVE",
+      "priority": "Engage and destroy visible enemy aircraft, prioritizing targets that pose immediate threat."
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "Target and engage visible enemy aircraft within range, supporting aircraft engagements."
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 967
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

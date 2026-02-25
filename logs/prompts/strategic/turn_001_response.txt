@@ -1,0 +1,45 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 1
+================================================================================
+
+{
+  "turn": 1,
+  "situation_analysis": "We have air superiority with a single enemy aircraft detected in the center. Our forces are strong, and we should capitalize on this early advantage.",
+  "enemy_formation": "SINGLE_CONTACT",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Engage and eliminate the single enemy aircraft.",
+    "Maintain radar coverage and protect the AWACS."
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "SUPPORT",
+      "priority": "Maintain central radar coverage while staying clear of potential threats."
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "AGGRESSIVE",
+      "priority": "Close in on the detected enemy aircraft and prepare to engage."
+    },
+    {
+      "role": "SAM",
+      "mode": "DEFENSIVE",
+      "priority": "Hold position and be ready to provide air defense if the enemy aircraft approaches."
+    },
+    {
+      "role": "DECOY",
+      "mode": "RECON",
+      "priority": "Move forward cautiously to draw attention and confirm enemy position without engaging."
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 1087
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

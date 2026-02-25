@@ -1,0 +1,40 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 17
+================================================================================
+
+{
+  "turn": 17,
+  "situation_analysis": "We maintain air superiority with only one enemy aircraft visible. Our aircraft is out of missiles, requiring careful coordination with the SAM unit.",
+  "enemy_formation": "SINGLE_CONTACT",
+  "momentum_suggestion": "MAINTAIN_AGGRESSIVE",
+  "priorities": [
+    "Eliminate the single enemy aircraft.",
+    "Protect our AWACS and SAM unit."
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "SUPPORT",
+      "priority": "Maintain radar coverage and stay clear of potential threats."
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "RECON",
+      "priority": "Locate and track the enemy aircraft, but do not engage without missiles."
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "Engage the enemy aircraft if it comes within range, coordinating with our aircraft for targeting."
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 904
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

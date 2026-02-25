@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 22
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "Aircraft is out of missiles and in RECON mode. The enemy is a HIGH threat. Retreating to avoid engagement as per RECON mode and missile constraint."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

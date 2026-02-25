@@ -1,0 +1,45 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 2
+================================================================================
+
+{
+  "turn": 2,
+  "situation_analysis": "Blue has air superiority with one visible enemy aircraft. The enemy is concentrated in the center, presenting an opportunity for an aggressive push.",
+  "enemy_formation": "AGGRESSIVE_PUSH",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Neutralize the visible enemy aircraft.",
+    "Maintain air superiority and protect AWACS."
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "SUPPORT",
+      "priority": "Provide radar coverage and maintain safe distance from enemy."
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "AGGRESSIVE",
+      "priority": "Engage the visible enemy aircraft, focusing fire."
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "Target and engage the visible enemy aircraft if within range."
+    },
+    {
+      "role": "DECOY",
+      "mode": "AGGRESSIVE",
+      "priority": "Move forward to draw enemy fire or provide screening for attacking units."
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 1021
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

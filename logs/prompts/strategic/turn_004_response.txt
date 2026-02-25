@@ -1,0 +1,45 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 4
+================================================================================
+
+{
+  "turn": 4,
+  "situation_analysis": "We maintain air superiority with a single enemy aircraft detected in the center. Our forces are well-positioned to engage, but missile counts are low for some units.",
+  "enemy_formation": "SINGLE_CONTACT",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Eliminate the single enemy aircraft.",
+    "Preserve AWACS and manage missile inventory."
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "SUPPORT",
+      "priority": "Maintain radar coverage and stay clear of potential engagement zones."
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "AGGRESSIVE",
+      "priority": "Engage the enemy aircraft with coordinated fire."
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "Provide long-range fire support against the enemy aircraft."
+    },
+    {
+      "role": "DECOY",
+      "mode": "AGGRESSIVE",
+      "priority": "Move forward to draw fire or provide a screening element for the attacking aircraft."
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 1052
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 20
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "AWACS must retreat from all threats. The enemy is at a medium threat level, and moving UP will increase the distance, aligning with the defensive objective."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

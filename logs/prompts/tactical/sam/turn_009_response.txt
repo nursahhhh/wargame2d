@@ -1,0 +1,19 @@
+================================================================================
+TACTICAL RESPONSE - SAM - TURN 9
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 4,
+      "idx": 2,
+      "action_type": "SHOOT",
+      "why": "Aggressive mode, enemy AIRCRAFT #9 has a hit_prob of 0.1, which is greater than 0.05. Engaging the highest threat."
+    }
+  ],
+  "claimed_targets": [
+    9
+  ]
+}
+
+================================================================================

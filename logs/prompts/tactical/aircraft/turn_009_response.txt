@@ -1,0 +1,26 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 9
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 5,
+      "action_type": "SHOOT",
+      "why": "Aggressive mode, shooting critical threat AIRCRAFT #9 with 41% hit probability. Target is not claimed."
+    },
+    {
+      "id": 3,
+      "idx": 5,
+      "action_type": "SHOOT",
+      "why": "Aggressive mode, shooting AIRCRAFT #8 with 17% hit probability. Target is not claimed."
+    }
+  ],
+  "claimed_targets": [
+    9,
+    8
+  ]
+}
+
+================================================================================

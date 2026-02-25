@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 17
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 0,
+      "action_type": "WAIT",
+      "why": "Aircraft is in RECON mode and out of missiles. Enemy is HIGH threat but not CRITICAL. Waiting to conserve resources and avoid engagement."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

@@ -1,0 +1,26 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 11
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 5,
+      "action_type": "SHOOT",
+      "why": "Aggressive mode: SHOOT AIRCRAFT #7 with 17% hit probability, which is >0.1. This target is a HIGH threat."
+    },
+    {
+      "id": 3,
+      "idx": 5,
+      "action_type": "SHOOT",
+      "why": "Aggressive mode: SHOOT AIRCRAFT #8 with 17% hit probability, which is >0.1. This target is a HIGH threat."
+    }
+  ],
+  "claimed_targets": [
+    7,
+    8
+  ]
+}
+
+================================================================================

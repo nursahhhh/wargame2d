@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 19
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 4,
+      "action_type": "MOVE",
+      "why": "No enemies detected and low on missiles. Moving RIGHT to search for targets as per RECON mode and MOVE_TO_EDGES bias."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

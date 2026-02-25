@@ -1,0 +1,166 @@
+================================================================================
+TACTICAL EXECUTION - AWACS - TURN 7
+================================================================================
+
+=== SYSTEM PROMPT ===
+You are a AWACS tactical operator for BLUE.
+
+
+CORE RULES:
+- One action per unit per turn
+- Closer = higher hit probability
+- Protect AWACS at all costs (losing it = defeat)
+
+UNIT CAPABILITIES:
+- AIRCRAFT: Mobile, armed (missiles), medium radar
+- SAM: Stationary, armed, can toggle stealth
+- AWACS: Mobile, unarmed, long radar (HVT)
+- DECOY: Mobile, unarmed, appears as aircraft
+
+
+**YOUR ROLE: AWACS**
+- AWACS: Unarmed scout - SURVIVE and provide radar. Retreat from ALL threats.
+
+
+
+
+**THREAT INTERPRETATION:**
+- CRITICAL (dist ≤3): Immediate danger - shoot or retreat NOW
+- HIGH (4-6): Can engage next turn
+- MEDIUM (7-10): Positioning threat
+- LOW (>10): No immediate concern
+
+**BEARING:** N=north, NE=northeast, E=east, etc. Use to understand enemy positions.
+
+**hit_prob_from_enemy:** If >0, enemy CAN hit you. Prioritize defense if high.
+
+**OUTPUT:** Valid JSON with action_type field for each decision.
+
+================================================================================
+
+=== USER PROMPT ===
+**AWACS TACTICAL - Mode: DEFENSIVE**
+Objective: HIGH
+
+**SITUATION:** We maintain air superiority with one enemy aircraft detected in the center. Our AWACS is critically low on missile defense, requiring immediate protection.
+**ENEMY FORMATION:** SINGLE_CONTACT
+
+**CONSTRAINTS:**
+- NO moving to occupied positions: []
+- NO shooting claimed targets
+- Choose idx from opts array
+- Include action_type in each decision for validation
+
+**ACTION FORMAT:**
+- idx: Action index (0, 1, 2, etc.)
+- act: Action type
+- description: What the action does
+- conflict: true if move would collide (avoid these!)
+
+**AWACS TACTICS:**
+- SURVIVAL IS EVERYTHING: Any threat = RETREAT
+- Check hit_prob_from_enemy: if >0, you're in danger
+- Stay >5 tiles from armed enemies
+- WAIT only if completely safe
+
+**Units:**
+[
+ {
+  "id": 1,
+  "pos": [
+   1,
+   6
+  ],
+  "missiles": 0,
+  "enemies": [
+   {
+    "id": 9,
+    "type": "AIRCRAFT",
+    "bearing": "E",
+    "dist": 9,
+    "threat": "MEDIUM",
+    "hit_prob": 0.1,
+    "hit_prob_from_enemy": 0.16,
+    "can_they_hit_me": true,
+    "is_hvt": false
+   }
+  ],
+  "opts": [
+   {
+    "idx": 0,
+    "act": "WAIT",
+    "description": "WAIT (hold position)"
+   },
+   {
+    "idx": 1,
+    "act": "MOVE",
+    "dir": "UP",
+    "conflict": false,
+    "effect": "RETREAT",
+    "description": "MOVE UP (RETREAT nearest at E)"
+   },
+   {
+    "idx": 2,
+    "act": "MOVE",
+    "dir": "DOWN",
+    "conflict": false,
+    "effect": "RETREAT",
+    "description": "MOVE DOWN (RETREAT nearest at E)"
+   },
+   {
+    "idx": 3,
+    "act": "MOVE",
+    "dir": "LEFT",
+    "conflict": false,
+    "effect": "RETREAT",
+    "description": "MOVE LEFT (RETREAT nearest at E)"
+   },
+   {
+    "idx": 4,
+    "act": "MOVE",
+    "dir": "RIGHT",
+    "conflict": false,
+    "effect": "APPROACH",
+    "description": "MOVE RIGHT (APPROACH nearest at E)"
+   }
+  ]
+ }
+]
+
+**Claimed Targets:** []
+
+**DECISION RULES:**
+1. **CRITICAL threats (dist ≤3):** SHOOT if hit_prob >0.05 (survival first)
+2. **HVTs (is_hvt: true):** SHOOT if hit_prob >0.1
+3. **Mode-specific:**
+   - AGGRESSIVE: Shoot if hit_prob >0.1, prefer APPROACH moves
+   - DEFENSIVE: Shoot only CRITICAL, prefer RETREAT moves
+   - RECON: Avoid combat unless CRITICAL/HVT, use FLANK moves
+4. **Low ammo (<2 missiles):** Conserve for HVTs/CRITICAL only
+5. **Conflicts:** Avoid moves marked with conflict: true
+
+**MOVEMENT GUIDANCE:**
+- "bearing" shows enemy direction (N, NE, E, SE, S, SW, W, NW)
+- "effect" shows result: APPROACH (closer), RETREAT (further), FLANK (same dist)
+- When no enemies: follow "bias" field for patrol direction
+
+**OUTPUT FORMAT:**
+{
+  "decisions": [
+    {"id": <unit_id>, "idx": <action_index>, "action_type": "<SHOOT|MOVE|WAIT|TOGGLE>", "why": "<brief reasoning>"}
+  ],
+  "claimed_targets": [<target_ids_if_shooting>]
+}
+
+**CRITICAL:** Output exactly 1 decisions. Include action_type for validation.
+
+
+================================================================================
+METADATA:
+- Role: AWACS
+- Turn: 7
+- Units: [1]
+- Directive Mode: DEFENSIVE
+- Directive Priority: HIGH
+- Shared Intel: []
+================================================================================

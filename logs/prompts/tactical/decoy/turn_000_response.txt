@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - DECOY - TURN 0
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 5,
+      "idx": 4,
+      "action_type": "MOVE",
+      "why": "No enemies detected, moving right to search the edges of the map as per RECON mode bias."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

@@ -1,0 +1,23 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 5
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 2,
+      "action_type": "MOVE",
+      "why": "Aggressive mode, enemy is to the NE, moving DOWN will approach."
+    },
+    {
+      "id": 3,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "Aggressive mode, enemy is to the SE, moving UP will approach."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

@@ -1,0 +1,19 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 14
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 5,
+      "action_type": "SHOOT",
+      "why": "Aggressive mode, enemy AIRCRAFT #8 is a HIGH threat, and hit probability (0.17) is above the aggressive threshold (0.1)."
+    }
+  ],
+  "claimed_targets": [
+    8
+  ]
+}
+
+================================================================================

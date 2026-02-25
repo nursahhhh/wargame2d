@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 23
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 4,
+      "action_type": "MOVE",
+      "why": "In RECON mode with no visible enemies and out of missiles, the AIRCRAFT should move to search for undetected units. Moving RIGHT aligns with the MOVE_TO_EDGES bias to cover more ground."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

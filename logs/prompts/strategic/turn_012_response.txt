@@ -1,0 +1,40 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 12
+================================================================================
+
+{
+  "turn": 12,
+  "situation_analysis": "We maintain air superiority with one enemy aircraft remaining. Our AWACS has low missile count, but the immediate threat is minimal.",
+  "enemy_formation": "SINGLE_CONTACT",
+  "momentum_suggestion": "MAINTAIN_AGGRESSIVE",
+  "priorities": [
+    "Eliminate the remaining enemy AIRCRAFT",
+    "Protect our AWACS"
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "DEFENSIVE",
+      "priority": "High"
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "AGGRESSIVE",
+      "priority": "Critical"
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "High"
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 670
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

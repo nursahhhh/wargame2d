@@ -1,0 +1,40 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 22
+================================================================================
+
+{
+  "turn": 22,
+  "situation_analysis": "We have air superiority with one visible enemy aircraft, but our aircraft is out of missiles and our SAM is the only unit capable of engaging.",
+  "enemy_formation": "AGGRESSIVE_PUSH",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Eliminate visible enemy aircraft with SAM",
+    "Protect AWACS from potential unseen threats"
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "DEFENSIVE",
+      "priority": "Maintain safe distance from known enemy, provide radar coverage."
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "RECON",
+      "priority": "Search for remaining enemy units, avoid engaging due to no missiles."
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "Engage and destroy the visible enemy aircraft."
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 865
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

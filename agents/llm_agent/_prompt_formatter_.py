@@ -71,6 +71,7 @@ class PromptFormatter:
                 "width": intel.grid.width,
                 "height": intel.grid.height,
             },
+            "step": step,
             "global_state": {
             "aggression": round(intel.aggression_level(turn=step), 2
         )
@@ -132,7 +133,7 @@ class PromptFormatter:
 
         # SAM-specific
         if hasattr(entity, "is_toggled") or  isinstance(entity, SAM): 
-            print ("Sam was activated")
+
             caps["is_radar_active"] = getattr(entity, "is_toggled", False)
             caps["activation_range"] = getattr(entity, "activation_range", None)
             caps["can_shoot_when_active"] = getattr(entity, "can_shoot", False)
@@ -280,6 +281,22 @@ class PromptFormatter:
         """
 
         lines: List[str] = []
+        if "step" in payload: 
+            step = payload["step"]
+            lines.append(
+                f"Turn : {step} ")
+
+
+        # ==================================================
+        # GRID INFO
+        # ==================================================
+        if "grid" in payload:
+            grid = payload["grid"]
+            lines.append("\n=== GRID ===")
+            lines.append(
+                f"Size: {grid['width']} x {grid['height']} "
+                f"(coordinates: 0..{grid['width']-1}, 0..{grid['height']-1})"
+            )
 
         # ==================================================
         # GLOBAL STRATEGIC CONTEXT

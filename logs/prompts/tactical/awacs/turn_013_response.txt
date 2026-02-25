@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 13
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 2,
+      "action_type": "MOVE",
+      "why": "AWACS is critically low on missile protection and facing a MEDIUM threat. Retreating is the priority to maintain a safe distance from the enemy, as indicated by the 'can_they_hit_me' field."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

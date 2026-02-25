@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 21
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "AWACS is unarmed and must retreat from any potential threat. The enemy aircraft has a hit_prob_from_enemy > 0, indicating a potential threat."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

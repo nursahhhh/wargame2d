@@ -51,7 +51,7 @@ def extract_events(
     # ---------------------------------------------------------
     # 2. TACTICAL DEGRADATION
     # ---------------------------------------------------------
-    if world.turns_without_movement >= 5:
+    if world.turns_without_movement >= 8:
         events.append({
             "type": "TACTICAL_STALL",
             "turn": world.turn,
@@ -60,7 +60,7 @@ def extract_events(
             "severity": "MEDIUM"
         })
 
-    if world.turns_without_shooting >= 5:
+    if world.turns_without_shooting >= 8:
         events.append({
             "type": "TACTICAL_STALL",
             "turn": world.turn,

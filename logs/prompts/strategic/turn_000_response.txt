@@ -1,0 +1,45 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 0
+================================================================================
+
+{
+  "turn": 0,
+  "situation_analysis": "No enemy units are currently detected, indicating a need for reconnaissance to locate their forces and determine their strategy.",
+  "enemy_formation": "NO_CONTACT",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Locate enemy forces",
+    "Maintain AWACS safety"
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "RECON",
+      "priority": "HIGH"
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "RECON",
+      "priority": "HIGH"
+    },
+    {
+      "role": "SAM",
+      "mode": "DEFENSIVE",
+      "priority": "MEDIUM"
+    },
+    {
+      "role": "DECOY",
+      "mode": "RECON",
+      "priority": "MEDIUM"
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 718
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

@@ -1,0 +1,19 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 13
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 5,
+      "action_type": "SHOOT",
+      "why": "Aggressive mode, enemy AIRCRAFT #7 is a HIGH threat, and hit probability (0.17) is greater than 0.1. Prioritizing engagement."
+    }
+  ],
+  "claimed_targets": [
+    7
+  ]
+}
+
+================================================================================

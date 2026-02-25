@@ -1,0 +1,40 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 20
+================================================================================
+
+{
+  "turn": 20,
+  "situation_analysis": "We maintain air superiority with only one enemy aircraft detected in the center; however, our aircraft is out of missiles, necessitating cautious engagement.",
+  "enemy_formation": "SINGLE_CONTACT",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Protect AWACS",
+    "Eliminate remaining enemy aircraft with SAM"
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "DEFENSIVE",
+      "priority": "High"
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "RECON",
+      "priority": "Medium"
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "High"
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 687
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

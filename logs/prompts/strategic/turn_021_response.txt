@@ -1,0 +1,41 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 21
+================================================================================
+
+{
+  "turn": 21,
+  "situation_analysis": "We maintain air superiority with one visible enemy aircraft. Our aircraft is out of missiles, requiring careful coordination to eliminate the remaining threat.",
+  "enemy_formation": "SINGLE_CONTACT",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Eliminate visible enemy aircraft",
+    "Locate remaining enemy units",
+    "Protect AWACS"
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "SUPPORT",
+      "priority": "Provide radar coverage for SAM and search for missing enemies."
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "RECON",
+      "priority": "Search for remaining enemies while avoiding engagement due to lack of missiles."
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "Engage the visible enemy aircraft with priority."
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 887
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

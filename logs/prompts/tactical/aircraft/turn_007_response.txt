@@ -1,0 +1,23 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 7
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 4,
+      "action_type": "MOVE",
+      "why": "Aggressive mode, enemy is MEDIUM threat (dist 7), no shot available (hit_prob 0.0), so APPROACH by moving RIGHT."
+    },
+    {
+      "id": 3,
+      "idx": 4,
+      "action_type": "MOVE",
+      "why": "Aggressive mode, enemy is MEDIUM threat (dist 7), no shot available (hit_prob 0.0), so APPROACH by moving RIGHT."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

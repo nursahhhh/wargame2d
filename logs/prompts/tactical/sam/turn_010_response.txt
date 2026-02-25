@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - SAM - TURN 10
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 4,
+      "idx": 1,
+      "action_type": "TOGGLE",
+      "why": "SAM is in AGGRESSIVE mode and has no good shots (hit_prob < 0.25) while radar is OFF. Toggling radar ON to potentially engage threats next turn."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

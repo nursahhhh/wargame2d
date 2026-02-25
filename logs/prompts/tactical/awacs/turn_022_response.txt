@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 22
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "AWACS must retreat from all threats. The enemy is at a medium distance (12), but the AWACS has a non-zero hit probability from the enemy (0.18) and the enemy can hit it. Moving UP will increase distance from the NE threat."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

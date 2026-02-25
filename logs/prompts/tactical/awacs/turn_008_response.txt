@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 8
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "AWACS is at critical missile vulnerability and has a hit_prob_from_enemy of 0.16. The objective is DEFENSIVE, so retreat is the priority. Moving UP is a RETREAT action."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

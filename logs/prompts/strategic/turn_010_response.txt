@@ -1,0 +1,40 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 10
+================================================================================
+
+{
+  "turn": 10,
+  "situation_analysis": "We maintain air superiority with 4 allied units against 3 visible enemy aircraft, concentrated in the center. Our AWACS is critically low on missiles, requiring careful protection.",
+  "enemy_formation": "CONCENTRATED_CENTER",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Protect AWACS due to low missile count",
+    "Eliminate enemy aircraft in the center"
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "DEFENSIVE",
+      "priority": "Maintain safe distance from enemy aircraft and provide radar coverage."
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "AGGRESSIVE",
+      "priority": "Engage and destroy enemy aircraft in the center, focusing fire to eliminate threats quickly."
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "Target and engage any enemy aircraft within range, prioritizing those threatening our AWACS or other aircraft."
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 998
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

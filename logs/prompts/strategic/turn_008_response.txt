@@ -1,0 +1,40 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 8
+================================================================================
+
+{
+  "turn": 8,
+  "situation_analysis": "We maintain air superiority with 4 allied units against 1 visible enemy aircraft. Our AWACS is at critical missile vulnerability, requiring immediate protection.",
+  "enemy_formation": "SINGLE_CONTACT",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Protect AWACS from potential threats",
+    "Eliminate the visible enemy aircraft"
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "DEFENSIVE",
+      "priority": "HIGH"
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "AGGRESSIVE",
+      "priority": "HIGH"
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "MEDIUM"
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 711
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

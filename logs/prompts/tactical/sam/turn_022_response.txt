@@ -1,0 +1,19 @@
+================================================================================
+TACTICAL RESPONSE - SAM - TURN 22
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 4,
+      "idx": 2,
+      "action_type": "SHOOT",
+      "why": "SAM is in AGGRESSIVE mode and the enemy AIRCRAFT #8 has a hit probability of 0.24, which is greater than the 0.1 threshold for aggressive engagement. This is the only unit capable of engaging."
+    }
+  ],
+  "claimed_targets": [
+    8
+  ]
+}
+
+================================================================================

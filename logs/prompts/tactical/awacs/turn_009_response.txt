@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 9
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "AWACS is critically low on missile protection and has enemies that can hit it. Retreating to increase distance from the nearest threat."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

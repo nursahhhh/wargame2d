@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - SAM - TURN 20
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 4,
+      "idx": 0,
+      "action_type": "WAIT",
+      "why": "Threat is HIGH but hit probability is low (0.17), and current mode is AGGRESSIVE. No shoot option available. Waiting is the best option."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - DECOY - TURN 3
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 5,
+      "idx": 4,
+      "action_type": "MOVE",
+      "why": "In AGGRESSIVE mode, the Decoy should approach the enemy to draw fire. The enemy is to the East, so moving RIGHT will approach it."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

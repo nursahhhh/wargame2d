@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - DECOY - TURN 1
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 5,
+      "idx": 4,
+      "action_type": "MOVE",
+      "why": "In RECON mode, the objective is to move cautiously to draw attention. Moving RIGHT (APPROACH) towards the enemy at a distance of 2 is too close for cautious reconnaissance. However, given the single enemy contact and the DECOY's role to draw fire, moving right to approach the enemy slightly is the best option to fulfill the RECON objective of drawing attention without immediately engaging, as there are no other options to move away or flank. The current threat is CRITICAL, but as a DECOY, the role is to bait. This move will make the DECOY a more attractive target."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

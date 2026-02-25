@@ -1,0 +1,40 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 7
+================================================================================
+
+{
+  "turn": 7,
+  "situation_analysis": "We maintain air superiority with one enemy aircraft detected in the center. Our AWACS is critically low on missile defense, requiring immediate protection.",
+  "enemy_formation": "SINGLE_CONTACT",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Protect AWACS",
+    "Neutralize remaining enemy aircraft"
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "DEFENSIVE",
+      "priority": "HIGH"
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "AGGRESSIVE",
+      "priority": "HIGH"
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "MEDIUM"
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 681
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

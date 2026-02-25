@@ -1,0 +1,23 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 4
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 2,
+      "action_type": "MOVE",
+      "why": "Enemy is at medium distance, no shot available. Moving DOWN to approach the enemy."
+    },
+    {
+      "id": 3,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "Enemy is at medium distance, no shot available. Moving UP to approach the enemy."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

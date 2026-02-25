@@ -1,0 +1,40 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 25
+================================================================================
+
+{
+  "turn": 25,
+  "situation_analysis": "All visible enemy units have been eliminated, leading to air superiority. However, the enemy AWACS and potentially other units remain undetected, requiring a recon push to locate them.",
+  "enemy_formation": "NO_CONTACT",
+  "momentum_suggestion": "MAINTAIN_AGGRESSIVE",
+  "priorities": [
+    "Locate remaining enemy units, especially AWACS",
+    "Maintain air superiority and protect our AWACS"
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "RECON",
+      "priority": "High - Expand radar coverage to locate missing enemy units."
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "RECON",
+      "priority": "High - Aggressively scout for enemy AWACS or other hidden units."
+    },
+    {
+      "role": "SAM",
+      "mode": "DEFENSIVE",
+      "priority": "Medium - Remain in position, ready to engage if enemies are detected within range."
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 934
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

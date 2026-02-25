@@ -4,9 +4,10 @@ import requests
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional, TYPE_CHECKING
+from typing import Dict, Any, Optional, TYPE_CHECKING,List
 from dotenv import load_dotenv
-from commander_agent import CommanderAgent
+from .commander_agent import CommanderAgent
+from.llm_utils import call_openrouter
 from env.core.actions import Action
 from env.core.types import Team, ActionType
 from env.world import WorldState
@@ -19,119 +20,7 @@ from ._prompt_formatter_ import PromptFormatter, PromptConfig
 if TYPE_CHECKING:
     from env.environment import StepInfo
 
-load_dotenv()
-# ============================================================
-# TOOL DEFINITION
-# ============================================================
 
-ACTION_TOOL = {
-    "type": "function",
-    "function": {
-        "name": "select_actions",
-        "description": (
-            "Select at most one valid action per entity. "
-            "Only choose from the provided allowed actions."
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "actions": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "entity_id": {"type": "integer"},
-                            "action": {"type": "string"},
-                            "dir": {
-                                "type": "string",
-                                "enum": ["UP", "DOWN", "LEFT", "RIGHT"]
-                            },
-                            "reason_tag": {
-                                "type": "string",
-                                "enum": [
-                                    "HIGH_PRESSURE_AVOIDENCE",
-                                    "LOW_PRESSURE_ADVANCE",
-                                    "ENEMY_DETECTED_ATTACK",
-                                    "SUPPORT_AWACS",
-                                    "DEFEND_AWACS",
-                                    "SCOUTING_BEHAVIOR",
-                                    "HOLD_POSITION"
-                                ]
-                            },
-                            "note": {"type": "string"}
-                        },
-                        "required": ["entity_id", "action", "reason_tag"]
-                    }
-                }
-            },
-            "required": ["actions"]
-        }
-    }
-}
-
-
-# ============================================================
-# OpenRouter call
-# ============================================================
-
-def call_openrouter(prompt: str, model: str, api_key: str, step: int,    run_log_dir,):
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "HTTP-Referer": "http://localhost",
-        "X-Title": "wargame2d-llm-agent",
-        "Content-Type": "application/json",
-    }
-
-    payload = {
-        "model": model,
-        "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "You are an action-selection module. "
-                    "You MUST respond only via the provided function."
-                ),
-            },
-            {"role": "user", "content": prompt},
-        ],
-        "tools": [ACTION_TOOL],
-        "tool_choice": {
-            "type": "function",
-            "function": {"name": "select_actions"}
-        },
-        "temperature": 0.0,
-
-    }
-
-    resp = requests.post(url, headers=headers, json=payload)
-    if resp.status_code != 200:
-        print("=== OpenRouter HTTP ERROR ===")
-        print(resp.text)
-
-        resp.raise_for_status()
-
-    data = resp.json()
-
-    step_file = run_log_dir / f"step_{step:03d}.json"
-
-    log_payload = {
-        "step": step,
-        "model": model,
-        "prompt": prompt,
-        "raw_response": data,
-    }
-
-    with open(step_file, "w", encoding="utf-8") as f:
-        json.dump(log_payload, f, indent=2, ensure_ascii=False)
-
-
-    msg = data["choices"][0]["message"]
-
-    if "tool_calls" in msg:
-        return msg["tool_calls"][0]["function"]["arguments"]
-
-    return None
 
 
 # ============================================================
@@ -160,6 +49,7 @@ class LLMHybridAgent(BaseAgent):
         self.model = model
         self.prompt_formatter = PromptFormatter()
         self.prompt_config = PromptConfig()
+        self.current_strategy = None
 
         self.memory_window = memory_window
         self.recent_history: list[str] = []
@@ -173,6 +63,7 @@ class LLMHybridAgent(BaseAgent):
 
 
     # --------------------------------------------------------
+
 
 
     def get_actions(
@@ -200,53 +91,26 @@ class LLMHybridAgent(BaseAgent):
                 allowed_actions[entity.id] = acts
 
         # -----------------------------
-        # Initialize Commander
+        # INITIAL STRATEGY (if missing)
         # -----------------------------
-        commander = CommanderAgent(
-            model=self.model,
-            api_key=self.api_key,
-            run_log_dir=self.run_log_dir
-        )
+        if self.current_strategy is None:
+            print("[INIT] Calling Commander for initial strategy")
+
+            commander = CommanderAgent(
+                model=self.model,
+                api_key=self.api_key,
+                run_log_dir=self.run_log_dir
+            )
+
+            self.current_strategy = commander.decide_intent(
+                intel=intel,
+                step=self.step_counter,
+                escalation_reason="Game start – create initial strategy",
+
+            )
 
         # -----------------------------
-        # Build simplified commander state
-        # -----------------------------
-        commander_state = {
-            "turn": self.step_counter,
-            "friendlies": [
-                {
-                    "id": f.id,
-                    "kind": f.kind.name,
-                    "position": f.pos,
-                    "armed": bool(getattr(f, "missiles", 0)) or f.can_shoot,
-                    "radar": f.get_active_radar_range(),
-                } for f in intel.friendlies if f.alive
-            ],
-            "enemy_known": [
-                {
-                    "id": e.id,
-                    "kind": e.kind.name,
-                    "position": e.position,
-                    "threat_score": round(
-                        max(intel.enemy_threat_score(e, f.pos) for f in intel.friendlies if f.alive),
-                        2
-                    )
-                } for e in intel.visible_enemies
-            ],
-            "team_unseen": list(intel.team_unseen)
-        }
-
-        # -----------------------------
-        # Commander decides high-level intent
-        # -----------------------------
-        try:
-            commander_intent = commander.decide_intent(commander_state, self.step_counter)
-        except Exception as e:
-            print(f"[Commander ERROR] {e}")
-            commander_intent = {}
-
-        # -----------------------------
-        # Build Captain prompt
+        # Build executor prompt
         # -----------------------------
         prompt_text, prompt_payload = self.prompt_formatter.build_prompt(
             intel=intel,
@@ -255,55 +119,86 @@ class LLMHybridAgent(BaseAgent):
             step=self.step_counter
         )
 
-        # Include commander intent in prompt and payload
-        full_prompt = self._build_context_prompt(prompt_text)
-        full_prompt += f"\n\n=== COMMANDER INTENT ===\n{json.dumps(commander_intent, indent=2)}\n"
-        prompt_payload["commander_intent"] = commander_intent
+        full_prompt = self._build_context_prompt(
+            prompt_text,
+            self.current_strategy
+        )
 
         # -----------------------------
-        # Increment step counter
-        # -----------------------------
-        self.step_counter += 1
-
-        # -----------------------------
-        # Call Captain LLM
+        # Call Executor LLM
         # -----------------------------
         try:
-            llm_args = call_openrouter(
+            llm_response = call_openrouter(
                 prompt=full_prompt,
                 model=self.model,
                 api_key=self.api_key,
                 step=self.step_counter,
+                agent_type="executor",
                 run_log_dir=self.run_log_dir,
             )
         except Exception as e:
             print(f"[LLM ERROR] {e}")
-            llm_args = None
+            llm_response = None
 
         # -----------------------------
-        # Parse LLM actions
+        # Parse Tool Response
         # -----------------------------
         parsed_actions = {}
-        if llm_args:
-            parsed_actions = self._parse_llm_output(llm_args, allowed_actions)
+
+        if llm_response:
+            parsed_actions = self._handle_tool_response(
+                response=llm_response,
+                allowed_actions=allowed_actions,
+                state=state,
+                step=self.step_counter,
+                team_intel=intel
+            )
 
         if parsed_actions:
             final_actions.update(parsed_actions)
         else:
-            print("LLM FAILED → no actions selected")
+            full_prompt = self._build_context_prompt(
+            prompt_text,
+            self.current_strategy
+        )
+            try:
+                llm_response = call_openrouter(
+                    prompt=full_prompt,
+                    model=self.model,
+                    api_key=self.api_key,
+                    step=self.step_counter,
+                    agent_type="executor",
+                    run_log_dir=self.run_log_dir,
+                )
+            except Exception as e:
+                print(f"[LLM ERROR] {e}")
+                llm_response = None
+
+            parsed_actions = self._handle_tool_response(
+                response=llm_response,
+                allowed_actions=allowed_actions,
+                state=state,
+                step=self.step_counter,
+                team_intel=intel
+            )
+            final_actions.update(parsed_actions)
 
         # -----------------------------
-        # Build metadata
+        # Increment step AFTER everything
         # -----------------------------
+        self.step_counter += 1
+
         metadata = {
-            "llm_raw_output": llm_args,
+            "llm_raw_output": llm_response,
             "parsed_actions": parsed_actions,
             "allowed_actions": allowed_actions,
             "prompt_payload": prompt_payload,
+            "current_strategy": self.current_strategy,
         }
 
-        print("Parsed actions:", parsed_actions)
         return final_actions, metadata
+    
+    
     def build_experience_advisory_section(
         self,           
         path: str,
@@ -386,13 +281,19 @@ class LLMHybridAgent(BaseAgent):
             "wargame2d/memory/distilled/experience_guidance.json"
         )
 
-        commander_intent_text = ""
+        
         if commander_intent:
-            commander_intent_text = f"\n=== COMMANDER INTENT ===\n{json.dumps(commander_intent, indent=2)}\n"
+            formatted_intent = json.dumps(commander_intent, indent=2)
+            
+            commander_intent_text = (
+                "\n" + "=" * 60 + "\n"
+                "        CURRENT STRATEGIC DIRECTIVE FROM COMMANDER\n"
+                + "=" * 60 + "\n"
+                f"{formatted_intent}\n"
+            )
 
         combined = f"""
-
-        You are a tactical AI commander controlling friendly units in a 2D combat grid:
+        You are a tactical AI executor controlling friendly units in a 2D combat grid:
         AWACS, Aircraft, Decoys, and SAM sites.
 
         All cells within range of: Friendly AWACS radar OR active SAM radar
@@ -404,7 +305,7 @@ class LLMHybridAgent(BaseAgent):
         P1. PROTECT FRIENDLY AWACS — Survival is absolute. Never compromise.
         P2. DESTROY ENEMY AWACS — Terminal win condition.
         P3. AVOID DETECTION — Stay outside enemy radar; deny interception.
-        P4. GAIN INFORMATION — Explore TEAM-UNSEEN areas (conditional).
+        P4. GAIN INFORMATION — Expand radar coverage into currently unobserved areas.
         P5. ACHIEVE NUMERICAL ADVANTAGE — Coordinate SAM + aircraft.
         P6. ENGAGE IN COMBAT — Prefer engagements that improve force advantage.
 
@@ -413,9 +314,44 @@ class LLMHybridAgent(BaseAgent):
         - AND TEAM-UNSEEN cells exist outside friendly sensor coverage
 
         Lower priorities MUST NOT override higher priorities.
+  
+        {commander_intent_text} 
+        ============================================================
+        STRATEGIC ALIGNMENT & MANDATORY COMMAND EXECUTION
+        ============================================================
 
-        {commander_intent_text}  # <-- Commander Intent inserted here
+        You operate under the current Commander strategy shown above.
 
+        ------------------------------------------------------------
+        STEP 1 — Evaluate Strategic Triggers
+        ------------------------------------------------------------
+
+        Before selecting actions, evaluate the following events:
+
+        - ally_unit_destroyed
+        - new_enemy_detected
+        - base_under_attack
+        - heavy_casualties
+        - objective_captured
+        - sudden_loss_of_air_superiority
+        - unexpected_enemy_maneuver
+        - strategic_asset_threatened (e.g., AWACS or SAM at risk)
+
+        If ANY of the above is True:
+
+            → You MUST call the Commander for strategy reassessment.
+            → Do NOT skip commander call.
+
+        ------------------------------------------------------------
+        STEP 2 — If No Strategic Trigger
+        ------------------------------------------------------------
+
+        If no strategic trigger is active:
+
+            → The current strategy remains valid
+
+                    
+        {experience_avoidance}
         ============================================================
         GAME STATE (Provided Each Turn)
         ============================================================
@@ -423,39 +359,20 @@ class LLMHybridAgent(BaseAgent):
         - Grid dimensions and boundaries
         - All friendly unit positions, types, states (armed/unarmed, radar on/off)
         - Known enemy unit positions (if detected)
-        - TEAM-SEEN cells: observed by ANY friendly unit at ANY time
-        - TEAM-UNSEEN cells: never observed by any friendly unit
         - Friendly radar coverage (AWACS + active SAMs)
         - Estimated/known enemy radar coverage
         - Turn number
 
         ============================================================
-        CONSTRAINT CLASSIFICATION
+        HARD CONSTRAINTS — Never violate under any circumstance
         ============================================================
-        HARD constraints — Never violate under any circumstance:
         [H1] AWACS must NEVER enter known enemy radar coverage
         [H2] AWACS must NEVER end turn with zero safe escape routes
         [H3] Actions that guarantee AWACS destruction next turn are FORBIDDEN
         [H4] Exploration inside friendly radar coverage is INVALID
         [H5] Re-labeling invalid exploration as DEFEND/SUPPORT is FORBIDDEN
 
-        ============================================================
-        ADVANTAGE DEVELOPMENT RULE
-        ============================================================
-
-        If immediate engagement does not yield clear local advantage:
-
-        The unit MUST execute one of the following:
-
-        - Reposition to create multi-unit convergence
-        - Move to overlap with friendly SAM coverage
-        - Constrain enemy movement corridor
-        - Improve radar coverage geometry
-        - Reduce own exposure while preserving pressure
-
-        Passive retreat without strategic improvement is discouraged.
-        Inaction is not acceptable when advantage can be developed.
-
+    
         ============================================================
         UNIT CAPABILITIES
         ============================================================
@@ -481,76 +398,33 @@ class LLMHybridAgent(BaseAgent):
 
         ============================================================
         SHARED INTELLIGENCE (Team Sensor Fusion)
-        ============================================================
-        - All units share a SINGLE GLOBAL KNOWLEDGE MAP
-        - A cell is TEAM-SEEN if observed by ANY friendly unit, ever
-        - Individual unit perception is IRRELEVANT for exploration decisions
-        - Cells inside friendly AWACS/SAM radar have ZERO exploration value
-        - Exploration targets must be TEAM-UNSEEN AND outside friendly radar
+       ============================================================
 
-        ============================================================
-        DECISION RULES BY SITUATION
-        ============================================================
-
-        IF enemy AWACS is DETECTED:
-        → P2 activates: All aircraft MUST reduce distance or block escape
-        → WAIT/RETREAT forbidden for armed aircraft
-        → Ignore exploration; prioritize kill
-
-        IF friendly AWACS is THREATENED (enemy closing or radar encroaching):
-        → P1 activates: Abort lower priorities immediately
-        → AWACS moves to maximize radar separation
-        → Aircraft may intercept or screen
-
-        IF neither AWACS is detected AND TEAM-UNSEEN cells exist:
-        → P4 activates: At least ONE unit MUST explore
-        → Select highest-uncertainty regions first
-        → Aircraft/decoys reposition toward TEAM-UNSEEN boundaries
-        → WAIT is FORBIDDEN if exploration-enabling move exists
-
-        IF all exploration moves are blocked by constraints:
-        → Reposition toward the BOUNDARY of known space
-        → This enables future exploration access
-        → Log this as reason_tag: REPOSITION_FOR_EXPLORATION
-
-        ============================================================
-        CONFLICT RESOLUTION (When Constraints Collide)
-        ============================================================
-        1. Always satisfy HARD constraints first
-        2. Satisfy as many FIRM constraints as possible without violating HARD
-        3. Among remaining options, prefer those satisfying SOFT constraints
-        4. If ALL actions violate at least one constraint:
-        → Choose the action that violates the LOWEST priority constraint
-        → Flag reason_tag with: FORCED_CONSTRAINT_VIOLATION
-
-        ============================================================
-        ANTI-EXPLOIT RULES
-        ============================================================
-        - Exploration claimed inside friendly radar = INVALID (H4)
-        - DEFEND_AWACS near AWACS when effect is exploration = INVALID (H5)
-        - Adversarial safety check: If enemy combat aircraft are detected,
-        and move is safe now but unsafe after obvious enemy response,
-        treat it as UNSAFE.
-
-        If no enemy combat aircraft are detected,
-        assume LOW probability of immediate interception from unseen space.
-
-        - Edge-hugging or corner moves for AWACS are high-risk
-        - No laundering invalid actions through alternate reason_tags
-
-        {experience_avoidance}
+        - All friendly units contribute to a single, real-time radar map.
+        - There is NO persistent memory of previously observed cells.
+        - Visibility is determined solely by current radar coverage of all friendly units
+        - Radar coverage is dynamic, as units may move each turn.
+        - A cell is considered "currently observed" if it is within any friendly radar range.
+        - Cells outside all current radar ranges are considered unobserved.
+        - Exploration means moving radar-capable units to expand coverage into these unobserved areas.
+        - Units must not violate higher-priority mission objectives or HARD constraints while exploring.
 
         ============================================================
         OUTPUT FORMAT
         ============================================================
-
         Respond with valid JSON matching the provided function schema.
+        You MUST call exactly ONE function:
+
+        - select_actions → if strategy remains valid
+        - request_strategy_update → if strategy need  replannig
+
+        Never call both.
 
         BEFORE calling the function, you MUST internally evaluate:
         - Threat exposure
         - Engagement advantage
         - Coordination potential
-
+        - Alignment with strategic directive
         For each selected action:
 
         - Select AT MOST ONE action per unit
@@ -605,10 +479,6 @@ class LLMHybridAgent(BaseAgent):
         return combined
 
 
-    # --------------------------------------------------------
-    # PARSER (FIXED)
-    # --------------------------------------------------------
-
     def _extract_entity_id(self, raw):
         if raw is None:
             return None
@@ -616,7 +486,68 @@ class LLMHybridAgent(BaseAgent):
             return raw
         match = re.search(r"\d+", str(raw))
         return int(match.group()) if match else None
+    
 
+    def _handle_tool_response(self, response, allowed_actions, state, step,team_intel):
+        """
+        Dispatch based on which tool the LLM called.
+        """
+
+        tool_calls = response.get("tool_calls", [])
+        if not tool_calls:
+            return {}
+
+        tool = tool_calls[0]["function"]
+        name = tool["name"]
+        args = tool["arguments"]
+
+        if name == "select_actions":
+            return self._parse_llm_output(args, allowed_actions)
+
+        elif name == "request_strategy_update":
+            return self._handle_strategy_update(args, state, step,team_intel)
+
+        else:
+            print(f"Unknown tool call: {name}")
+            return {}
+
+
+    def _handle_strategy_update(self, llm_args: str, state, step,team_intel):
+
+
+        try:
+            data = json.loads(llm_args)
+        except Exception:
+            print("Strategy update parsing failed.")
+            return {}
+
+        reason = data.get("reason", "")
+        observed_shift = data.get("observed_shift", "")
+        urgency = data.get("urgency_level", 3)
+
+        print("\n[STRATEGY UPDATE REQUESTED]")
+        print(f"Reason: {reason}")
+        print(f"Observed Shift: {observed_shift}")
+        print(f"Urgency: {urgency}\n")
+
+        commander = CommanderAgent(
+            model=self.model,
+            api_key=self.api_key,
+            run_log_dir=self.run_log_dir
+        )
+
+        self.current_strategy = commander.decide_intent(
+           intel= team_intel,
+            step=step,
+            escalation_reason=reason,
+            observed_shift=observed_shift,
+            urgency=urgency,
+        )
+
+        
+        return {}
+    
+    
 
     def _parse_llm_output(self, llm_args: str, allowed_actions):
         actions: Dict[int, Action] = {}

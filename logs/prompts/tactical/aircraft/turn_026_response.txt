@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 26
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "AIRCRAFT is out of missiles and in RECON mode. No enemies detected, so it should move to search for remaining undetected units. Moving UP is a valid search action with a MOVE_TO_EDGES bias."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

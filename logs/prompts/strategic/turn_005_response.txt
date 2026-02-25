@@ -1,0 +1,45 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 5
+================================================================================
+
+{
+  "turn": 5,
+  "situation_analysis": "We have air superiority with a single enemy aircraft detected in the center. Our AWACS and Decoy have low missile averages, but the enemy poses a minimal threat.",
+  "enemy_formation": "SINGLE_CONTACT",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Eliminate the single enemy aircraft",
+    "Maintain air superiority"
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "SUPPORT",
+      "priority": "High"
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "AGGRESSIVE",
+      "priority": "Critical"
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "High"
+    },
+    {
+      "role": "DECOY",
+      "mode": "AGGRESSIVE",
+      "priority": "Medium"
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 789
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

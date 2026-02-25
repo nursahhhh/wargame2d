@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 27
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "Aircraft has 0 missiles and is in RECON mode. No enemies are detected. Moving DOWN to search for enemies and fulfill the RECON objective, following the MOVE_TO_EDGES bias."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

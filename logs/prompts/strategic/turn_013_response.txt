@@ -1,0 +1,40 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 13
+================================================================================
+
+{
+  "turn": 13,
+  "situation_analysis": "We have air superiority with one visible enemy aircraft in the center; our AWACS is critically low on missile protection.",
+  "enemy_formation": "SINGLE_CONTACT",
+  "momentum_suggestion": "MAINTAIN_AGGRESSIVE",
+  "priorities": [
+    "Eliminate the visible enemy aircraft",
+    "Protect our AWACS"
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "DEFENSIVE",
+      "priority": "Maintain safe distance from enemy and provide radar coverage."
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "AGGRESSIVE",
+      "priority": "Engage and destroy the enemy aircraft."
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "Target and destroy the enemy aircraft, supporting the AIRCRAFT unit."
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 808
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

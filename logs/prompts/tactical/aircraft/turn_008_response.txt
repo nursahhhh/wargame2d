@@ -1,0 +1,23 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 8
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 4,
+      "action_type": "MOVE",
+      "why": "No shot with hit_prob > 0.1, so APPROACH enemy to close distance for next turn."
+    },
+    {
+      "id": 3,
+      "idx": 4,
+      "action_type": "MOVE",
+      "why": "No shot with hit_prob > 0.1, so APPROACH enemy to close distance for next turn."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

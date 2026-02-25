@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - DECOY - TURN 5
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 5,
+      "idx": 4,
+      "action_type": "MOVE",
+      "why": "As a DECOY in AGGRESSIVE mode, I need to draw fire. The enemy is CRITICAL (dist 1) and moving RIGHT will APPROACH it, putting me in a better position to bait it away from other units. The enemy's hit_prob_from_enemy is high, so I am a good target for them."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

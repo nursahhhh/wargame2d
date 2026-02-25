@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 12
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 0,
+      "action_type": "WAIT",
+      "why": "AWACS is unarmed and the enemy is at a medium distance (10). While the enemy can hit, the probability is low (0.16), and there are no immediate retreat options that significantly increase distance. Waiting is the safest option given the current options and the AWACS's role to survive."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

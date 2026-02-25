@@ -1,0 +1,45 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 3
+================================================================================
+
+{
+  "turn": 3,
+  "situation_analysis": "Air superiority achieved with one enemy aircraft detected in the center; our AWACS and Decoy are low on missile counts, but not critical as they are unarmed.",
+  "enemy_formation": "SINGLE_CONTACT",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Neutralize the single enemy aircraft threat.",
+    "Maintain air superiority and protect our AWACS."
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "SUPPORT",
+      "priority": "Provide radar coverage and maintain safe distance from enemy."
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "AGGRESSIVE",
+      "priority": "Engage and destroy the detected enemy aircraft."
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "Support aircraft in engaging the enemy, if within range."
+    },
+    {
+      "role": "DECOY",
+      "mode": "AGGRESSIVE",
+      "priority": "Advance towards enemy to draw fire and provide false target."
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 1019
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

@@ -1,0 +1,19 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 16
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 5,
+      "action_type": "SHOOT",
+      "why": "Aggressive mode, enemy AIRCRAFT #8 is a HIGH threat with a 17% hit probability, which is above the 10% threshold for aggressive engagement. Unit has 1 missile, but this is a valid shot."
+    }
+  ],
+  "claimed_targets": [
+    8
+  ]
+}
+
+================================================================================

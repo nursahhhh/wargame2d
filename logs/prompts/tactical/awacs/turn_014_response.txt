@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 14
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 0,
+      "action_type": "WAIT",
+      "why": "AWACS is unarmed and the enemy is at MEDIUM threat range (dist 13). There is no immediate danger, and waiting is the safest option to maintain distance and provide radar support without moving closer to the enemy."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

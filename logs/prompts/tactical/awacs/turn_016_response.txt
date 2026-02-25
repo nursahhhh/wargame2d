@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 16
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 0,
+      "action_type": "WAIT",
+      "why": "AWACS is unarmed and has a low threat level (dist 13). No immediate danger, so waiting is safe."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

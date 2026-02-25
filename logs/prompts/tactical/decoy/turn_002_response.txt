@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - DECOY - TURN 2
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 5,
+      "idx": 4,
+      "action_type": "MOVE",
+      "why": "In AGGRESSIVE mode, with a critical threat at E, the DECOY should move to APPROACH the enemy to draw fire. Moving RIGHT (idx 4) achieves this."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

@@ -1,0 +1,26 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 10
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 5,
+      "action_type": "SHOOT",
+      "why": "Unit 2 is in AGGRESSIVE mode and has a CRITICAL threat (AIRCRAFT #9) with a 55% hit probability. Shooting is the priority."
+    },
+    {
+      "id": 3,
+      "idx": 6,
+      "action_type": "SHOOT",
+      "why": "Unit 3 is in AGGRESSIVE mode and has a CRITICAL threat (AIRCRAFT #9) with a 55% hit probability. Shooting is the priority."
+    }
+  ],
+  "claimed_targets": [
+    9,
+    9
+  ]
+}
+
+================================================================================

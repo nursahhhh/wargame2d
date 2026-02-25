@@ -1,0 +1,40 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 15
+================================================================================
+
+{
+  "turn": 15,
+  "situation_analysis": "We maintain air superiority with a single enemy aircraft detected in the center; our AWACS is critically low on missiles.",
+  "enemy_formation": "SINGLE_CONTACT",
+  "momentum_suggestion": "MAINTAIN_AGGRESSIVE",
+  "priorities": [
+    "Eliminate the remaining enemy aircraft quickly.",
+    "Protect our AWACS."
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "DEFENSIVE",
+      "priority": "Maintain maximum distance from enemy, provide radar coverage."
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "AGGRESSIVE",
+      "priority": "Engage and destroy the detected enemy aircraft."
+    },
+    {
+      "role": "SAM",
+      "mode": "AGGRESSIVE",
+      "priority": "Support the aircraft in engaging the enemy, prioritize target if in range."
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 835
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

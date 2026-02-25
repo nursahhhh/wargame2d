@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 11
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "AWACS is in DEFENSIVE mode and has a MEDIUM threat (dist 9) with a non-zero hit_prob_from_enemy (0.16). Retreating is the priority to maintain safe distance and survive."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

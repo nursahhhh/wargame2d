@@ -1,0 +1,40 @@
+================================================================================
+STRATEGIC RESPONSE - TURN 6
+================================================================================
+
+{
+  "turn": 6,
+  "situation_analysis": "No enemy units are currently detected, suggesting they are either stealthy or far away. Our AWACS is low on missile average, but this is irrelevant as it has no weapons.",
+  "enemy_formation": "NO_CONTACT",
+  "momentum_suggestion": "SITUATION_NEUTRAL",
+  "priorities": [
+    "Locate enemy forces",
+    "Maintain radar coverage"
+  ],
+  "directives": [
+    {
+      "role": "AWACS",
+      "mode": "RECON",
+      "priority": "High"
+    },
+    {
+      "role": "AIRCRAFT",
+      "mode": "RECON",
+      "priority": "Medium"
+    },
+    {
+      "role": "SAM",
+      "mode": "DEFENSIVE",
+      "priority": "Low"
+    }
+  ],
+  "hvt_targets": []
+}
+
+================================================================================
+METADATA:
+- Response Length: 674
+- Model: google/gemini-2.5-flash
+- Temperature: 0.5
+- Max Tokens: 2000
+================================================================================

@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AIRCRAFT - TURN 28
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 2,
+      "idx": 1,
+      "action_type": "MOVE",
+      "why": "No enemies detected, moving UP to search for targets as per RECON mode bias (MOVE_TO_EDGES)."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================

@@ -1,0 +1,17 @@
+================================================================================
+TACTICAL RESPONSE - AWACS - TURN 1
+================================================================================
+
+{
+  "decisions": [
+    {
+      "id": 1,
+      "idx": 0,
+      "action_type": "WAIT",
+      "why": "AWACS is an unarmed scout. The enemy is at a medium threat distance (10) and has a low hit probability (0.1). Waiting maintains central radar coverage and keeps the AWACS safe, as there is no immediate need to move."
+    }
+  ],
+  "claimed_targets": []
+}
+
+================================================================================
