@@ -133,7 +133,7 @@ class GameRunner:
         # --------------------------------------------------
         # 2. Get actions from agents
         # --------------------------------------------------
-        blue_actions, blue_meta = self._blue_agent.get_actions(
+        blue_actions, blue_meta =  self._blue_agent.get_actions(
             self._state,
             step_info=self._last_info,
             **injections.get("blue", {}),
